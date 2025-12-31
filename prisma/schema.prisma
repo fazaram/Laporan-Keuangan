@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+  monthlyAnalyses MonthlyAnalysis[]
+  yearlyAnalyses YearlyAnalysis[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  VIEWER
+  USER
+  ADMIN
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  date        DateTime
+  category    String
+  amount      Decimal  @db.Decimal(15, 2)
+  type        TransactionType
+  description String?  @db.Text
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model MonthlyAnalysis {
+  id          String   @id @default(cuid())
+  year        Int
+  month       Int
+  
+  totalIncome  Decimal  @db.Decimal(15, 2)
+  totalExpense Decimal  @db.Decimal(15, 2)
+  balance      Decimal  @db.Decimal(15, 2)
+  
+  previousMonthIncome  Decimal?  @db.Decimal(15, 2)
+  previousMonthExpense Decimal?  @db.Decimal(15, 2)
+  previousMonthBalance Decimal?  @db.Decimal(15, 2)
+  
+  analysis     String?  @db.Text
+  recommendations String? @db.Text
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, year, month])
+  @@index([userId])
+  @@map("monthly_analyses")
+}
+
+model YearlyAnalysis {
+  id          String   @id @default(cuid())
+  year        Int
+  
+  totalIncome  Decimal  @db.Decimal(15, 2)
+  totalExpense Decimal  @db.Decimal(15, 2)
+  balance      Decimal  @db.Decimal(15, 2)
+  
+  averageMonthlyIncome  Decimal  @db.Decimal(15, 2)
+  averageMonthlyExpense Decimal  @db.Decimal(15, 2)
+  
+  previousYearIncome  Decimal?  @db.Decimal(15, 2)
+  previousYearExpense Decimal?  @db.Decimal(15, 2)
+  previousYearBalance Decimal?  @db.Decimal(15, 2)
+  
+  analysis     String?  @db.Text
+  recommendations String? @db.Text
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, year])
+  @@index([userId])
+  @@map("yearly_analyses")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  action      AuditAction  
+  entityType  String       
+  entityId    String       
+  
+  oldData     Json?        
+  newData     Json?        
+  
+  ipAddress   String?
+  userAgent   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}

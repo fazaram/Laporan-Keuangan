@@ -26,7 +26,7 @@ Aplikasi web modern untuk **mengelola keuangan pribadi** dengan laporan **bulana
 
 ## 🚀 Quick Start
 ```bash
-git clone <repository-url>
+git clone https://github.com/fazaram/Laporan-Keuangan
 cd laporan-keuangan
 npm install
 npm run dev

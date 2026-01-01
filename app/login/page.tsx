@@ -122,7 +122,7 @@ export default function LoginPage() {
 
                 {/* Footer */}
                 <p className="text-center text-sm text-gray-500 mt-8">
-                    © 2024 Laporan Keuangan. All rights reserved.
+                    © 2026 Laporan Keuangan. All rights reserved.
                 </p>
             </div>
         </div>

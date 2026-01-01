@@ -1,0 +1,205 @@
+{
+  "exportDate": "2026-01-01T08:08:42.141Z",
+  "users": [
+    {
+      "id": "cmju89jc000007kic31pd0xqp",
+      "email": "admin@laporan.com",
+      "password": "$2a$10$bye6IppKTWbiz7N30r2j7.1b8J45w7K.8w3ID25tnmkiTx9m.JLi.",
+      "name": "Administrator",
+      "role": "ADMIN",
+      "createdAt": "2025-12-31T16:25:41.664Z",
+      "updatedAt": "2025-12-31T16:25:41.664Z"
+    },
+    {
+      "id": "cmju89je100017kicylj5ofd5",
+      "email": "viewer@laporan.com",
+      "password": "$2a$10$TtLAfKDS4MrEQhzv3ldWKupM/MkDA7eM1QY0ES34Ccj3GFmoEqON.",
+      "name": "View Only User",
+      "role": "VIEWER",
+      "createdAt": "2025-12-31T16:25:41.737Z",
+      "updatedAt": "2025-12-31T16:25:41.737Z"
+    },
+    {
+      "id": "cmju89jg700027kick5fx887z",
+      "email": "user@laporan.com",
+      "password": "$2a$10$I53K2QctS0zbnVL4DdvmMOMKH2vZ0r6OF7a/EanjNnmMa2YWxNCli",
+      "name": "Regular User",
+      "role": "USER",
+      "createdAt": "2025-12-31T16:25:41.815Z",
+      "updatedAt": "2025-12-31T16:25:41.815Z"
+    }
+  ],
+  "transactions": [],
+  "monthlyAnalyses": [],
+  "yearlyAnalyses": [],
+  "auditLogs": [
+    {
+      "id": "cmju8ujc8000v7ktwx13u83u3",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "CREATE",
+      "entityType": "Transaction",
+      "entityId": "cmju8ujc2000t7ktw8sv7muey",
+      "oldData": null,
+      "newData": {
+        "date": "2025-12-31T00:00:00.000Z",
+        "type": "INCOME",
+        "amount": 10000000,
+        "category": "gaji",
+        "description": null
+      },
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T16:42:01.449Z"
+    },
+    {
+      "id": "cmjua7x2d000z7ktwlgvc5se2",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "CREATE",
+      "entityType": "Transaction",
+      "entityId": "cmjua7x1u000x7ktwl02cpvip",
+      "oldData": null,
+      "newData": {
+        "date": "2026-01-01T00:00:00.000Z",
+        "type": "INCOME",
+        "amount": 50000,
+        "category": "Makan",
+        "description": null
+      },
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T17:20:25.381Z"
+    },
+    {
+      "id": "cmjua9x8i00137ktw2srv8fa4",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "CREATE",
+      "entityType": "Transaction",
+      "entityId": "cmjua9x8400117ktwtfr7317i",
+      "oldData": null,
+      "newData": {
+        "date": "2026-01-01T00:00:00.000Z",
+        "type": "INCOME",
+        "amount": 5000000,
+        "category": "Test Gaji",
+        "description": "Test transaksi januari"
+      },
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T17:21:58.914Z"
+    },
+    {
+      "id": "cmjubocck00177ktwwzb1d5d7",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "CREATE",
+      "entityType": "Transaction",
+      "entityId": "cmjuboccg00157ktwvzaqbhcr",
+      "oldData": null,
+      "newData": {
+        "date": "2025-12-31T00:00:00.000Z",
+        "type": "EXPENSE",
+        "amount": 200000,
+        "category": "sedekah",
+        "description": null
+      },
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T18:01:11.301Z"
+    },
+    {
+      "id": "cmjuboopf00197ktw7m5sbrv1",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "UPDATE",
+      "entityType": "Transaction",
+      "entityId": "cmjuboccg00157ktwvzaqbhcr",
+      "oldData": {
+        "date": "2025-12-31T00:00:00.000Z",
+        "type": "EXPENSE",
+        "amount": 200000,
+        "category": "sedekah",
+        "description": null
+      },
+      "newData": {
+        "date": "2026-01-01T00:00:00.000Z",
+        "type": "EXPENSE",
+        "amount": 200000,
+        "category": "sedekah",
+        "description": null
+      },
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T18:01:27.315Z"
+    },
+    {
+      "id": "cmjubqzzn001b7ktwuty07xj7",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "DELETE",
+      "entityType": "Transaction",
+      "entityId": "cmjua7x1u000x7ktwl02cpvip",
+      "oldData": {
+        "date": "2026-01-01T00:00:00.000Z",
+        "type": "INCOME",
+        "amount": 50000,
+        "category": "Makan",
+        "description": null
+      },
+      "newData": null,
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T18:03:15.251Z"
+    },
+    {
+      "id": "cmjubtc84001d7ktw4ybozfm0",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "DELETE",
+      "entityType": "Transaction",
+      "entityId": "cmjuboccg00157ktwvzaqbhcr",
+      "oldData": {
+        "date": "2026-01-01T00:00:00.000Z",
+        "type": "EXPENSE",
+        "amount": 200000,
+        "category": "sedekah",
+        "description": null
+      },
+      "newData": null,
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T18:05:04.420Z"
+    },
+    {
+      "id": "cmjubtg98001f7ktw6pzli9xp",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "DELETE",
+      "entityType": "Transaction",
+      "entityId": "cmjua9x8400117ktwtfr7317i",
+      "oldData": {
+        "date": "2026-01-01T00:00:00.000Z",
+        "type": "INCOME",
+        "amount": 5000000,
+        "category": "Test Gaji",
+        "description": "Test transaksi januari"
+      },
+      "newData": null,
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T18:05:09.645Z"
+    },
+    {
+      "id": "cmjubu6sb001h7ktwpr7km2mo",
+      "userId": "cmju89jc000007kic31pd0xqp",
+      "action": "DELETE",
+      "entityType": "Transaction",
+      "entityId": "cmju8ujc2000t7ktw8sv7muey",
+      "oldData": {
+        "date": "2025-12-31T00:00:00.000Z",
+        "type": "INCOME",
+        "amount": 10000000,
+        "category": "gaji",
+        "description": null
+      },
+      "newData": null,
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "createdAt": "2025-12-31T18:05:44.027Z"
+    }
+  ]
+}

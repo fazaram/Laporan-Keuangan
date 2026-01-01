@@ -63,5 +63,16 @@ export const authOptions: AuthOptions = {
             }
             return session;
         },
+        async redirect({ url, baseUrl }) {
+            // Redirect to dashboard after sign in
+            if (url === baseUrl || url === `${baseUrl}/`) {
+                return `${baseUrl}/dashboard`;
+            }
+            // Allow callback URLs on the same origin
+            if (url.startsWith(baseUrl)) {
+                return url;
+            }
+            return baseUrl;
+        },
     },
 };

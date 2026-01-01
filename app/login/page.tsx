@@ -70,7 +70,7 @@ export default function LoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                                placeholder="admin@laporan.com"
+                                placeholder="email@example.com"
                                 disabled={loading}
                             />
                         </div>
@@ -110,14 +110,7 @@ export default function LoginPage() {
                         </button>
                     </form>
 
-                    {/* Default Credentials Info */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <p className="text-xs text-blue-800 font-medium mb-2">📌 Kredensial Default:</p>
-                            <p className="text-xs text-blue-700">Email: <span className="font-mono">admin@laporan.com</span></p>
-                            <p className="text-xs text-blue-700">Password: <span className="font-mono">admin123</span></p>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* Footer */}

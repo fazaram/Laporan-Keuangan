@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { YearlyReportService } from '@/lib/reports/yearly';
 import { ExcelExportService } from '@/lib/excel/exporter';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);

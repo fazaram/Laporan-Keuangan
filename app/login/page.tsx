@@ -16,23 +16,35 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
 
+        console.log('[Login] Starting login process...');
+
         try {
+            console.log('[Login] Calling signIn with credentials...');
             const result = await signIn('credentials', {
                 email,
                 password,
                 redirect: false,
             });
 
+            console.log('[Login] SignIn result:', result);
+
             if (result?.error) {
+                console.error('[Login] SignIn error:', result.error);
                 setError('Email atau password salah');
             } else if (result?.ok) {
+                console.log('[Login] SignIn successful, redirecting to dashboard...');
                 router.push('/dashboard');
                 router.refresh();
+            } else {
+                console.warn('[Login] SignIn returned unexpected result:', result);
+                setError('Terjadi kesalahan yang tidak diketahui');
             }
         } catch (error) {
+            console.error('[Login] Exception during signIn:', error);
             setError('Terjadi kesalahan. Silakan coba lagi.');
         } finally {
             setLoading(false);
+            console.log('[Login] Login process completed');
         }
     };
 

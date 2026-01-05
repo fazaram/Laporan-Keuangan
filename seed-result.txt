@@ -1,0 +1,23 @@
+﻿
+≡ƒÜÇ Creating Default Users
+
+==================================================
+ΓÅ¡∩╕Å  Skipped admin@example.com (already exists)
+ΓÅ¡∩╕Å  Skipped user@example.com (already exists)
+
+==================================================
+Γ£à Default users created!
+
+Login credentials:
+
+1. Admin Account:
+   Email: admin@example.com
+   Password: admin123
+   Role: ADMIN
+
+2. User Account:
+   Email: user@example.com
+   Password: user123
+   Role: USER
+
+You can now login at http://localhost:3000/login

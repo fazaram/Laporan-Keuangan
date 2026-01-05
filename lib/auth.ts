@@ -13,32 +13,41 @@ export const authOptions: AuthOptions = {
             },
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) {
+                    console.error('[NextAuth] Missing credentials');
                     return null;
                 }
 
-                const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
-                });
+                try {
+                    const user = await prisma.user.findUnique({
+                        where: { email: credentials.email },
+                    });
 
-                if (!user) {
+                    if (!user) {
+                        console.error('[NextAuth] User not found:', credentials.email);
+                        return null;
+                    }
+
+                    const isPasswordValid = await bcrypt.compare(
+                        credentials.password,
+                        user.password
+                    );
+
+                    if (!isPasswordValid) {
+                        console.error('[NextAuth] Invalid password for user:', credentials.email);
+                        return null;
+                    }
+
+                    console.log('[NextAuth] User authenticated successfully:', user.email);
+                    return {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                        role: user.role,
+                    };
+                } catch (error) {
+                    console.error('[NextAuth] Authorization error:', error);
                     return null;
                 }
-
-                const isPasswordValid = await bcrypt.compare(
-                    credentials.password,
-                    user.password
-                );
-
-                if (!isPasswordValid) {
-                    return null;
-                }
-
-                return {
-                    id: user.id,
-                    email: user.email,
-                    name: user.name,
-                    role: user.role,
-                };
             },
         }),
     ],
@@ -53,6 +62,7 @@ export const authOptions: AuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                console.log('[NextAuth] JWT token created for user:', user.email);
             }
             return token;
         },
@@ -60,10 +70,12 @@ export const authOptions: AuthOptions = {
             if (session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as "VIEWER" | "USER" | "ADMIN";
+                console.log('[NextAuth] Session created for user:', session.user.email);
             }
             return session;
         },
         async redirect({ url, baseUrl }) {
+            console.log('[NextAuth] Redirect callback - URL:', url, 'BaseURL:', baseUrl);
             // Redirect to dashboard after sign in
             if (url === baseUrl || url === `${baseUrl}/`) {
                 return `${baseUrl}/dashboard`;
@@ -73,6 +85,24 @@ export const authOptions: AuthOptions = {
                 return url;
             }
             return baseUrl;
+        },
+    },
+    // Secret is required for production
+    secret: process.env.NEXTAUTH_SECRET,
+    // Enable debug mode for better error logging
+    debug: true,
+    // Logger for capturing errors in production
+    logger: {
+        error(code, metadata) {
+            console.error('[NextAuth Error]', code, metadata);
+        },
+        warn(code) {
+            console.warn('[NextAuth Warning]', code);
+        },
+        debug(code, metadata) {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('[NextAuth Debug]', code, metadata);
+            }
         },
     },
 };

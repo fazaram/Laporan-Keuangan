@@ -1,0 +1,15 @@
+﻿
+≡ƒöì Login Diagnostic Tool
+
+==================================================
+
+1∩╕ÅΓâú Testing database connection...
+Γ£à Database connected successfully
+
+2∩╕ÅΓâú Checking users in database...
+Γ¥î No users found in database!
+   You need to create a user first.
+
+==================================================
+Γ£à Diagnostic complete
+

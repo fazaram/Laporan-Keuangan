@@ -1,0 +1,60 @@
+﻿
+≡ƒöì Login Diagnostic Tool
+
+==================================================
+
+1∩╕ÅΓâú Testing database connection...
+Γ£à Database connected successfully
+
+2∩╕ÅΓâú Checking users in database...
+Γ£à Found 2 user(s):
+
+   User 1:
+   - Email: admin@example.com
+   - Name: Admin User
+   - Role: ADMIN
+   - Password Hash: $2a$10$TrTjq7bIgkAAG...
+   - Created: Mon Jan 05 2026 19:01:25 GMT+0700 (Western Indonesia Time)
+
+   User 2:
+   - Email: user@example.com
+   - Name: Regular User
+   - Role: USER
+   - Password Hash: $2a$10$7iS68ywDyLHtF...
+   - Created: Mon Jan 05 2026 19:01:25 GMT+0700 (Western Indonesia Time)
+
+
+3∩╕ÅΓâú Testing password hashing...
+
+   Testing user: admin@example.com
+   Γ£à Password is properly bcrypt hashed
+   Testing common passwords...
+
+   Testing user: user@example.com
+   Γ£à Password is properly bcrypt hashed
+   Testing common passwords...
+   Γ£à FOUND! Password is: "user123"
+
+
+4∩╕ÅΓâú Manual Login Simulation
+==================================================
+
+Attempting login for: admin@example.com
+
+To test login, try these steps:
+1. Go to http://localhost:3000/login
+2. Email: admin@example.com
+3. Password: [try the passwords listed above]
+
+If none work, you may need to reset the password.
+
+
+5∩╕ÅΓâú Environment Variables Check
+==================================================
+DATABASE_URL: Γ£à Set
+NEXTAUTH_SECRET: Γ£à Set
+NEXTAUTH_URL: http://localhost:3000
+
+==================================================
+Γ£à Diagnostic complete
+

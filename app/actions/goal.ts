@@ -21,6 +21,14 @@ export async function createGoal(formData: FormData) {
             return { error: 'Semua kolom wajib diisi dengan benar' };
         }
 
+        // Cek duplikat nama goal untuk user yang sama
+        const existing = await prisma.goal.findFirst({
+            where: { userId: session.user.id, name: { equals: name, mode: 'insensitive' } }
+        });
+        if (existing) {
+            return { error: `Nama tabungan "${name}" sudah ada. Gunakan nama lain.` };
+        }
+
         await prisma.goal.create({
             data: {
                 name,
@@ -197,6 +205,18 @@ export async function updateGoal(id: string, data: { name: string; targetAmount:
 
         const goal = await prisma.goal.findUnique({ where: { id, userId: session.user.id } });
         if (!goal) return { error: 'Goal tidak ditemukan' };
+
+        // Cek duplikat nama, kecuali nama milik goal itu sendiri
+        const duplicate = await prisma.goal.findFirst({
+            where: {
+                userId: session.user.id,
+                name: { equals: data.name, mode: 'insensitive' },
+                id: { not: id }
+            }
+        });
+        if (duplicate) {
+            return { error: `Nama tabungan "${data.name}" sudah digunakan. Pilih nama lain.` };
+        }
 
         // Jika target baru lebih kecil dari yang terkumpul, naikkan status
         const newStatus = Number(goal.currentAmount) >= data.targetAmount ? 'COMPLETED' : 'ACTIVE';

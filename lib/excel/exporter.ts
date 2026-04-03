@@ -9,7 +9,7 @@ export class ExcelExportService {
     static async exportMonthlyReport(report: MonthlyReport): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();
 
-        workbook.creator = 'Laporan Keuangan';
+        workbook.creator = 'Solvia Finance';
         workbook.created = new Date();
 
         // Sheet 1: Transactions (Harian)
@@ -31,7 +31,7 @@ export class ExcelExportService {
     static async exportYearlyReport(report: YearlyReport): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();
 
-        workbook.creator = 'Laporan Keuangan';
+        workbook.creator = 'Solvia Finance';
         workbook.created = new Date();
 
         // Sheet 1: Yearly Summary
@@ -109,7 +109,7 @@ export class ExcelExportService {
 
         // Title
         const title = sheet.getCell('A1');
-        title.value = `Laporan Keuangan ${getMonthName(report.month)} ${report.year}`;
+        title.value = `Solvia Finance - Laporan Bulanan ${getMonthName(report.month)} ${report.year}`;
         title.font = { size: 16, bold: true };
         title.alignment = { horizontal: 'center' };
         sheet.mergeCells('A1:D1');
@@ -234,7 +234,7 @@ export class ExcelExportService {
 
         // Title
         const title = sheet.getCell('A1');
-        title.value = `Laporan Keuangan Tahunan ${report.year}`;
+        title.value = `Solvia Finance - Laporan Tahunan ${report.year}`;
         title.font = { size: 16, bold: true };
         title.alignment = { horizontal: 'center' };
         sheet.mergeCells('A1:D1');

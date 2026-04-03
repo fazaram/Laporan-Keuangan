@@ -4,9 +4,11 @@ import { authOptions } from '@/lib/auth';
 import { Navbar } from '@/components/Navbar';
 import { KPICard } from '@/components/KPICard';
 import { prisma } from '@/lib/db';
-import { TransactionType } from '@prisma/client';
+import { TransactionType, Transaction, Goal } from '@prisma/client';
 import { formatCurrency, getCurrentMonth, getCurrentYear } from '@/lib/utils';
 import Link from 'next/link';
+import { AiInsightCard } from '@/components/AiInsightCard';
+import { DashboardCharts } from '@/components/DashboardCharts';
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -33,11 +35,17 @@ export default async function DashboardPage() {
         transactionFilter.userId = session.user.id;
     }
 
-    const transactions = await prisma.transaction.findMany({
+    const transactionsRaw = await prisma.transaction.findMany({
         where: transactionFilter,
         orderBy: { date: 'desc' },
         take: 10,
     });
+
+    const transactions = transactionsRaw.map((t: any) => ({
+        ...t,
+        amount: Number(t.amount),
+        date: t.date.toISOString(), // Convert Date to ISO string for safer serialization
+    }));
 
     const currentIncome = transactions
         .filter((t) => t.type === TransactionType.INCOME)
@@ -96,11 +104,17 @@ export default async function DashboardPage() {
 
     // Fetch Top Goals
     // @ts-ignore
-    const topGoals = await prisma.goal.findMany({
+    const topGoalsRaw = await prisma.goal.findMany({
         where: session.user.role !== 'VIEWER' ? { userId: session.user.id, status: 'ACTIVE' } : { status: 'ACTIVE' },
         orderBy: { targetAmount: 'desc' },
         take: 3,
     });
+
+    const topGoals = topGoalsRaw.map((g: any) => ({
+        ...g,
+        targetAmount: Number(g.targetAmount),
+        currentAmount: Number(g.currentAmount)
+    }));
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -156,6 +170,18 @@ export default async function DashboardPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* AI Insight Section */}
+                <div className="mb-8">
+                    <AiInsightCard />
+                </div>
+
+                {/* AI Charts Section */}
+                <DashboardCharts 
+                    income={currentIncome} 
+                    expense={currentExpense} 
+                    transactions={transactions} 
+                />
 
                 {/* Quick Actions */}
                 <div className={`grid grid-cols-1 ${session.user.role !== 'VIEWER' ? 'md:grid-cols-2' : ''} gap-6 mb-8`}>

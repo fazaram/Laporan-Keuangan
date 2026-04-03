@@ -27,6 +27,7 @@ model User {
   auditLogs AuditLog[]
   goals     Goal[]
   goalAllocations GoalAllocation[]
+  chatHistories ChatHistory[]
 
   @@map("users")
 }
@@ -196,4 +197,16 @@ enum GoalPriority {
 enum GoalStatus {
   ACTIVE
   COMPLETED
+}
+
+model ChatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // "user" | "assistant"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("chat_histories")
 }

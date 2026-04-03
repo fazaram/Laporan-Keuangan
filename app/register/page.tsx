@@ -11,15 +11,24 @@ export default function RegisterPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; general?: string }>({});
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError('');
+        setErrors({});
         
-        if (password.length < 6) {
-            setError('Password minimal 6 karakter');
+        const newErrors: typeof errors = {};
+        if (!name) newErrors.name = 'Nama lengkap wajib diisi';
+        if (!email) newErrors.email = 'Email wajib diisi';
+        if (!password) {
+            newErrors.password = 'Password wajib diisi';
+        } else if (password.length < 6) {
+            newErrors.password = 'Password minimal 6 karakter';
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
@@ -34,14 +43,15 @@ export default function RegisterPage() {
             const result = await registerUser(formData);
 
             if (result?.error) {
-                setError(result.error);
+                setErrors({ general: result.error });
             } else if (result?.success) {
+                // Gunakan notifikasi toast di masa depan, untuk sekarang alert ok
                 alert('Pendaftaran berhasil! Silakan login.');
                 router.push('/login');
             }
         } catch (error) {
             console.error('Registration exception:', error);
-            setError('Terjadi kesalahan. Silakan coba lagi.');
+            setErrors({ general: 'Terjadi kesalahan. Silakan coba lagi.' });
         } finally {
             setLoading(false);
         }
@@ -56,13 +66,16 @@ export default function RegisterPage() {
                             <span className="text-white text-3xl font-bold">👤</span>
                         </div>
                         <h1 className="text-3xl font-bold text-gray-900 mb-2">Daftar Akun Baru</h1>
-                        <p className="text-gray-600">Buat akun Laporan Keuangan Anda</p>
+                        <p className="text-gray-600">Buat akun Solvia Finance Anda</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                                {error}
+                        {errors.general && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-shake">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {errors.general}
                             </div>
                         )}
 
@@ -74,12 +87,24 @@ export default function RegisterPage() {
                                 id="name"
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                onChange={(e) => {
+                                    setName(e.target.value);
+                                    if (errors.name) setErrors({ ...errors, name: '' });
+                                }}
+                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${
+                                    errors.name ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
+                                } focus:ring-2 focus:border-transparent`}
                                 placeholder="Joko Widodo"
                                 disabled={loading}
                             />
+                            {errors.name && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1 animate-fadeIn">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    {errors.name}
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -90,12 +115,24 @@ export default function RegisterPage() {
                                 id="email"
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    if (errors.email) setErrors({ ...errors, email: '' });
+                                }}
+                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${
+                                    errors.email ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
+                                } focus:ring-2 focus:border-transparent`}
                                 placeholder="email@example.com"
                                 disabled={loading}
                             />
+                            {errors.email && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1 animate-fadeIn">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    {errors.email}
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -104,12 +141,23 @@ export default function RegisterPage() {
                                 label="Password"
                                 name="password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    if (errors.password) setErrors({ ...errors, password: '' });
+                                }}
                                 placeholder="Min. 6 Karakter"
                                 disabled={loading}
+                                className={errors.password ? 'border-red-500 focus:ring-red-500/20' : ''}
                             />
-                            <p className="text-xs text-gray-500 mt-2">Password harus memiliki panjang minimal 6 karakter.</p>
+                            {errors.password && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1 animate-fadeIn">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    {errors.password}
+                                </p>
+                            )}
+                            <p className="text-[10px] text-gray-500 mt-2">Password minimal 6 karakter.</p>
                         </div>
 
                         <button

@@ -93,9 +93,9 @@ export async function requestPasswordReset(email: string) {
             });
 
             const info = await transporter.sendMail({
-                from: '"Laporan Keuangan" <no-reply@laporan-keuangan.local>',
+                from: '"Solvia Finance" <no-reply@solvia-finance.local>',
                 to: email,
-                subject: "Reset Password - Laporan Keuangan",
+                subject: "Reset Password - Solvia Finance",
                 html: `
                     <h2>Permintaan Reset Password</h2>
                     <p>Halo, kami menerima permintaan untuk mereset kata sandi akun Anda.</p>

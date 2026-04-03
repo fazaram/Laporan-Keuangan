@@ -1,0 +1,128 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { TransactionType } from '@prisma/client';
+import { prisma } from '@/lib/db';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+
+export async function POST(req: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        if (!process.env.GEMINI_API_KEY) {
+            return NextResponse.json({ 
+                error: 'API Key Gemini belum dikonfigurasi. Tambahkan GEMINI_API_KEY di file .env' 
+            }, { status: 400 });
+        }
+
+        const { message, history = [] } = await req.json();
+        
+        if (!message) {
+            return NextResponse.json({ error: 'Pesan tidak boleh kosong' }, { status: 400 });
+        }
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // Ambil data keuangan user
+        const transactions = await (prisma as any).transaction.findMany({
+            where: { userId: session.user.id, date: { gte: thirtyDaysAgo } },
+            orderBy: { date: 'desc' }
+        });
+
+        const goals = await (prisma as any).goal.findMany({
+            where: { userId: session.user.id, status: 'ACTIVE' }
+        });
+
+        const totalIncome = transactions.filter((t: any) => t.type === 'INCOME').reduce((a: any, b: any) => a + Number(b.amount), 0);
+        const totalExpense = transactions.filter((t: any) => t.type === 'EXPENSE').reduce((a: any, b: any) => a + Number(b.amount), 0);
+        const saldo = totalIncome - totalExpense;
+
+        const goalsSummary = goals.map((g: any) => 
+            `- ${g.name}: Target Rp${g.targetAmount}, Terkumpul Rp${g.currentAmount} (${Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100)}%), Status: ${g.status}`
+        ).join('\n');
+
+        const systemPrompt = `Anda adalah asisten keuangan pribadi bernama "Solvia Assistant". Anda bertugas memberikan analisis, saran, dan menjawab pertanyaan terkait keuangan pengguna berdasarkan data berikut:
+        
+DATA KEUANGAN PENGGUNA:
+- Saldo Saat Ini: Rp ${saldo.toLocaleString('id-ID')}
+- Total Pemasukan: Rp ${totalIncome.toLocaleString('id-ID')}
+- Total Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}
+- Target Tabungan (Goals):
+${goalsSummary || '- Belum ada tabungan'}
+
+ATURAN PENTING:
+1. Jawab HANYA menggunakan Bahasa Indonesia dengan nada ramah, profesional, dan empatik.
+2. Jika pengguna bertanya di luar konteks keuangan, tabungan, pengeluaran, pemasukan, atau budgeting, tolak dengan sopan dan katakan: "Maaf, saya hanya dapat membantu Anda terkait manajemen keuangan pribadi."
+3. Berikan jawaban yang ringkas dan mudah dipahami, gunakan bullet points jika perlu.
+4. Selalu mendasari saran Anda pada data keuangan pengguna di atas.
+`;
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+        const formattedHistory = history.map((msg: any) => ({
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }]
+        }));
+
+        const chat = model.startChat({
+            history: [
+                { role: 'user', parts: [{ text: systemPrompt }] },
+                { role: 'model', parts: [{ text: "Baik, saya mengerti. Saya adalah Solvia Assistant, asisten keuangan pribadi Anda. Saya akan membantu Anda berdasarkan data keuangan yang diberikan." }] },
+                ...formattedHistory
+            ],
+        });
+
+        const result = await chat.sendMessage(message);
+        const reply = result.response.text();
+
+        // Simpan ke database
+        try {
+            await (prisma as any).chatHistory.create({
+                data: {
+                    userId: session.user.id,
+                    role: 'user',
+                    content: message,
+                }
+            });
+            await (prisma as any).chatHistory.create({
+                data: {
+                    userId: session.user.id,
+                    role: 'assistant',
+                    content: reply,
+                }
+            });
+        } catch (e) {
+            console.error('Failed to save chat history:', e);
+            // Tetap direturn agar user tidak terganggu
+        }
+
+        return NextResponse.json({ reply });
+
+    } catch (error: any) {
+        console.error('Chat API Error:', error);
+        
+        // Handle Rate Limit Error (429)
+        if (error.message?.includes('429') || error.status === 429) {
+            return NextResponse.json({ 
+                error: 'Limit harian AI habis (Free Tier). Silakan coba lagi beberapa saat lagi atau besok.' 
+            }, { status: 429 });
+        }
+
+        // Handle Model Not Found (404)
+        if (error.message?.includes('404') || error.status === 404) {
+            return NextResponse.json({ 
+                error: `Model AI tidak ditemukan (404). Silakan hubungi admin atau coba lagi nanti. Detail: ${error.message}` 
+            }, { status: 404 });
+        }
+
+        return NextResponse.json({ 
+            error: `Gagal memproses AI: ${error.message}` 
+        }, { status: 500 });
+    }
+}

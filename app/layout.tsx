@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Laporan Keuangan - Sistem Manajemen Keuangan Pribadi",
-  description: "Platform profesional untuk mengelola laporan keuangan harian, bulanan, dan tahunan dengan analisis mendalam",
+  title: "Solvia Finance - Sistem Manajemen Keuangan Pribadi",
+  description: "Platform profesional dengan analisis AI Solvia untuk mengelola laporan keuangan harian, bulanan, dan tahunan.",
 };
 
 export default function RootLayout({

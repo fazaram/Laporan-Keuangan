@@ -10,12 +10,23 @@ export default function LoginPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        setError('');
+        setErrors({});
+        
+        // Client-side validation
+        const newErrors: { email?: string; password?: string } = {};
+        if (!email) newErrors.email = 'Email wajib diisi';
+        if (!password) newErrors.password = 'Password wajib diisi';
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
         setLoading(true);
 
         console.log('[Login] Starting login process...');
@@ -32,18 +43,18 @@ export default function LoginPage() {
 
             if (result?.error) {
                 console.error('[Login] SignIn error:', result.error);
-                setError('Email atau password salah');
+                setErrors({ general: 'Email atau password salah' });
             } else if (result?.ok) {
                 console.log('[Login] SignIn successful, redirecting to dashboard...');
                 router.push('/dashboard');
                 router.refresh();
             } else {
                 console.warn('[Login] SignIn returned unexpected result:', result);
-                setError('Terjadi kesalahan yang tidak diketahui');
+                setErrors({ general: 'Terjadi kesalahan yang tidak diketahui' });
             }
         } catch (error) {
             console.error('[Login] Exception during signIn:', error);
-            setError('Terjadi kesalahan. Silakan coba lagi.');
+            setErrors({ general: 'Terjadi kesalahan. Silakan coba lagi.' });
         } finally {
             setLoading(false);
             console.log('[Login] Login process completed');
@@ -61,15 +72,18 @@ export default function LoginPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Laporan Keuangan</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">Solvia Finance</h1>
                         <p className="text-gray-600">Sistem Manajemen Keuangan Pribadi</p>
                     </div>
 
                     {/* Login Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                                {error}
+                        {errors.general && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-shake">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {errors.general}
                             </div>
                         )}
 
@@ -81,12 +95,24 @@ export default function LoginPage() {
                                 id="email"
                                 type="email"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                onChange={(e) => {
+                                    setEmail(e.target.value);
+                                    if (errors.email) setErrors({ ...errors, email: '' });
+                                }}
+                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${
+                                    errors.email ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
+                                } focus:ring-2 focus:border-transparent`}
                                 placeholder="email@example.com"
                                 disabled={loading}
                             />
+                            {errors.email && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1 animate-fadeIn">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    {errors.email}
+                                </p>
+                            )}
                         </div>
 
                         <div className="flex flex-col gap-1">
@@ -95,11 +121,22 @@ export default function LoginPage() {
                                 label="Password"
                                 name="password"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
+                                onChange={(e) => {
+                                    setPassword(e.target.value);
+                                    if (errors.password) setErrors({ ...errors, password: '' });
+                                }}
                                 placeholder="••••••••"
                                 disabled={loading}
+                                className={errors.password ? 'border-red-500 focus:ring-red-500/20' : ''}
                             />
+                            {errors.password && (
+                                <p className="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1 animate-fadeIn">
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    {errors.password}
+                                </p>
+                            )}
                             <div className="text-right mt-1">
                                 <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
                                     Lupa password?
@@ -137,7 +174,7 @@ export default function LoginPage() {
 
                 {/* Footer */}
                 <p className="text-center text-sm text-gray-500 mt-8">
-                    © 2026 Laporan Keuangan. All rights reserved.
+                    © 2026 Solvia Finance. All rights reserved.
                 </p>
             </div>
         </div>

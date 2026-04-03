@@ -46,9 +46,9 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Tabungan / Goals</h1>
-                    <p className="text-gray-600 mt-1">Kelola target tabungan masa depan Anda</p>
-                </div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Saving Goals</h1>
+                <p className="text-gray-600">Kelola target tabungan Anda dengan Solvia Finance</p>
+            </div>
                 <CreateGoalModal />
             </div>
 

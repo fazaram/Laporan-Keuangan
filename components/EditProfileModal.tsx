@@ -16,6 +16,8 @@ export function EditProfileModal({ user, onClose }: EditProfileModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [bioText, setBioText] = useState(user.bio || '');
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
@@ -52,21 +54,32 @@ export function EditProfileModal({ user, onClose }: EditProfileModalProps) {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">Nama</label>
+                            <span className="text-[10px] text-gray-400">Maks. 50 karakter</span>
+                        </div>
                         <input
                             name="name"
                             defaultValue={user.name || ''}
                             required
+                            maxLength={50}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             placeholder="Nama Lengkap"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio / Deskripsi Diri</label>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">Bio / Deskripsi Diri</label>
+                            <span className={`text-[10px] ${bioText.length >= 200 ? 'text-red-500 font-bold' : 'text-gray-400'}`}>
+                                {bioText.length}/200
+                            </span>
+                        </div>
                         <textarea
                             name="bio"
-                            defaultValue={user.bio || ''}
+                            value={bioText}
+                            onChange={(e) => setBioText(e.target.value)}
+                            maxLength={200}
                             rows={3}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
                             placeholder="Ceritakan sedikit tentang Anda..."

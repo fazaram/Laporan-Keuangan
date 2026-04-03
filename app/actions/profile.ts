@@ -17,6 +17,13 @@ export async function updateProfile(formData: FormData) {
         const bio = formData.get('bio') as string;
         const birthDateStr = formData.get('birthDate') as string;
 
+        if (name && name.length > 50) {
+            return { error: 'Nama maksimal 50 karakter' };
+        }
+        if (bio && bio.length > 200) {
+            return { error: 'Bio maksimal 200 karakter' };
+        }
+
         const updateData: any = {
             name,
             bio,

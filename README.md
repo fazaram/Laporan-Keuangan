@@ -58,8 +58,6 @@ Aplikasi web modern untuk **mengelola keuangan pribadi** dengan sistem **trackin
 
 ## 🖼️ Preview
 
-> Tambahkan screenshot di sini biar makin menarik 👇
-
 ### Dashboard
 ![Dashboard Preview](./public/screenshots/dashboard.png)
 

@@ -27,37 +27,39 @@ export async function GET(req: NextRequest) {
             orderBy: { date: 'desc' }
         });
 
+        const userData = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { name: true, bio: true }
+        });
+
         const goals = await (prisma as any).goal.findMany({
             where: { userId: session.user.id, status: 'ACTIVE' }
         });
 
-        const income = transactions.filter((t: any) => t.type === 'INCOME').reduce((a: any, b: any) => a + Number(b.amount), 0);
-        const expense = transactions.filter((t: any) => t.type === 'EXPENSE').reduce((a: any, b: any) => a + Number(b.amount), 0);
+        const totalIncome = transactions.filter((t: any) => t.type === 'INCOME').reduce((a: any, b: any) => a + Number(b.amount), 0);
+        const totalExpense = transactions.filter((t: any) => t.type === 'EXPENSE').reduce((a: any, b: any) => a + Number(b.amount), 0);
+        const saldo = totalIncome - totalExpense;
         
-        // Kategori pengeluaran terbesar
-        const expenseCategories = transactions
-            .filter((t: any) => t.type === 'EXPENSE')
-            .reduce((acc: any, t: any) => {
-                acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
-                return acc;
-            }, {});
-        
-        const topCategory = Object.entries(expenseCategories)
-            .sort((a: any, b: any) => b[1] - a[1])[0] || ['-', 0];
+        const goalsSummary = goals.map((g: any) => `- ${g.name}: Rp ${Number(g.targetAmount).toLocaleString('id-ID')}`).join('\n');
 
-        const systemPrompt = `Anda adalah Solvia Assistant, analis keuangan pribadi yang handal. Berikan 3-4 poin insight (saran/analisis) singkat dan tajam berdasarkan data 30 hari terakhir.
+        const systemPrompt = `Anda adalah asisten keuangan pribadi bernama "Solvia Assistant". Anda bertugas memberikan analisis, saran, dan menjawab pertanyaan terkait keuangan pengguna berdasarkan data berikut:
         
-DATA:
-- Pemasukan: Rp ${income.toLocaleString('id-ID')}
-- Pengeluaran: Rp ${expense.toLocaleString('id-ID')}
-- Kategori Pengeluaran Terbesar: ${topCategory[0]} (Rp ${Number(topCategory[1]).toLocaleString('id-ID')})
-- Goals Aktif: ${goals.length} buah
+USER PROFILE:
+- Nama: ${userData?.name || 'User'}
+- Bio: ${(userData as any)?.bio || '-'}
+
+DATA KEUANGAN PENGGUNA (30 Hari Terakhir):
+- Saldo: Rp ${saldo.toLocaleString('id-ID')}
+- Total Pemasukan: Rp ${totalIncome.toLocaleString('id-ID')}
+- Total Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}
+- Target Tabungan (Goals):
+${goalsSummary || '- Belum ada tabungan'}
 
 FORMAT:
 - Balas HANYA dengan list JSON string array, contoh: ["Poin 1", "Poin 2", "Poin 3"]
 - Gunakan Bahasa Indonesia.
 - Jangan ada teks lain selain JSON array.
-- Pastikan insight spesifik (misal: "Pengeluaran di kategori X cukup tinggi, coba kurangi").
+- Pastikan insight spesifik dan berikan apresiasi jika ada peningkatan atau saran jika pengeluaran terlalu tinggi.
 `;
 
         const model = genAI.getGenerativeModel({ model: 'gemini-pro' });

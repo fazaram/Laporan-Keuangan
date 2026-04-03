@@ -39,18 +39,27 @@ export async function POST(req: NextRequest) {
             where: { userId: session.user.id, status: 'ACTIVE' }
         });
 
+        const userData = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { name: true, bio: true }
+        });
+
         const totalIncome = transactions.filter((t: any) => t.type === 'INCOME').reduce((a: any, b: any) => a + Number(b.amount), 0);
         const totalExpense = transactions.filter((t: any) => t.type === 'EXPENSE').reduce((a: any, b: any) => a + Number(b.amount), 0);
         const saldo = totalIncome - totalExpense;
 
         const goalsSummary = goals.map((g: any) => 
-            `- ${g.name}: Target Rp${g.targetAmount}, Terkumpul Rp${g.currentAmount} (${Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100)}%), Status: ${g.status}`
+            `- ${g.name}: Target Rp ${Number(g.targetAmount).toLocaleString('id-ID')}, Terkumpul Rp ${Number(g.currentAmount).toLocaleString('id-ID')} (${Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100)}%)`
         ).join('\n');
 
         const systemPrompt = `Anda adalah asisten keuangan pribadi bernama "Solvia Assistant". Anda bertugas memberikan analisis, saran, dan menjawab pertanyaan terkait keuangan pengguna berdasarkan data berikut:
         
-DATA KEUANGAN PENGGUNA:
-- Saldo Saat Ini: Rp ${saldo.toLocaleString('id-ID')}
+USER PROFILE:
+- Nama: ${userData?.name || 'User'}
+- Bio: ${(userData as any)?.bio || '-'}
+
+DATA KEUANGAN PENGGUNA (30 Hari Terakhir):
+- Saldo: Rp ${saldo.toLocaleString('id-ID')}
 - Total Pemasukan: Rp ${totalIncome.toLocaleString('id-ID')}
 - Total Pengeluaran: Rp ${totalExpense.toLocaleString('id-ID')}
 - Target Tabungan (Goals):

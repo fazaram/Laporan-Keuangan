@@ -4,11 +4,12 @@ import { authOptions } from '@/lib/auth';
 import { Navbar } from '@/components/Navbar';
 import { KPICard } from '@/components/KPICard';
 import { prisma } from '@/lib/db';
-import { TransactionType, Transaction, Goal } from '@prisma/client';
+import { TransactionType } from '@prisma/client';
 import { formatCurrency, getCurrentMonth, getCurrentYear } from '@/lib/utils';
 import Link from 'next/link';
 import { AiInsightCard } from '@/components/AiInsightCard';
 import { DashboardCharts } from '@/components/DashboardCharts';
+import { syncFixedIncomeTransactions } from '@/app/actions/fixed-income-sync';
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -16,6 +17,9 @@ export default async function DashboardPage() {
     if (!session) {
         redirect('/login');
     }
+
+    // Sync fixed income transactions every time dashboard is loaded
+    await syncFixedIncomeTransactions(session.user.id);
 
     // Get current month data
     const currentYear = getCurrentYear();
@@ -79,12 +83,12 @@ export default async function DashboardPage() {
     });
 
     const prevIncome = prevTransactions
-        .filter((t) => t.type === TransactionType.INCOME)
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+        .filter((t: any) => t.type === TransactionType.INCOME)
+        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
 
     const prevExpense = prevTransactions
-        .filter((t) => t.type === TransactionType.EXPENSE)
-        .reduce((sum, t) => sum + Number(t.amount), 0);
+        .filter((t: any) => t.type === TransactionType.EXPENSE)
+        .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
 
     const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
     const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
@@ -97,14 +101,14 @@ export default async function DashboardPage() {
     const totalIncomeAllTime = allTransactions
         .filter((t) => t.type === TransactionType.INCOME)
         .reduce((sum, t) => sum + Number(t.amount), 0);
+
     const totalExpenseAllTime = allTransactions
         .filter((t) => t.type === TransactionType.EXPENSE)
         .reduce((sum, t) => sum + Number(t.amount), 0);
     const totalSaldo = totalIncomeAllTime - totalExpenseAllTime;
 
     // Fetch Top Goals
-    // @ts-ignore
-    const topGoalsRaw = await prisma.goal.findMany({
+    const topGoalsRaw = await (prisma as any).goal.findMany({
         where: session.user.role !== 'VIEWER' ? { userId: session.user.id, status: 'ACTIVE' } : { status: 'ACTIVE' },
         orderBy: { targetAmount: 'desc' },
         take: 3,
@@ -231,7 +235,7 @@ export default async function DashboardPage() {
                         {transactions.length === 0 ? (
                             <p className="text-gray-500 text-center py-8">Belum ada transaksi bulan ini</p>
                         ) : (
-                            transactions.map((tx) => (
+                            transactions.map((tx: any) => (
                                 <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition-colors">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${tx.type === TransactionType.INCOME ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'

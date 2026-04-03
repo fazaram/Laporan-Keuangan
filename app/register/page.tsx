@@ -62,8 +62,8 @@ export default function RegisterPage() {
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl mb-4">
-                            <span className="text-white text-3xl font-bold">👤</span>
+                        <div className="inline-flex items-center justify-center w-16 h-16 overflow-hidden rounded-2xl mb-4">
+                            <img src="/logo.png" alt="Solvia Finance Logo" className="w-full h-full object-cover" />
                         </div>
                         <h1 className="text-3xl font-bold text-gray-900 mb-2">Daftar Akun Baru</h1>
                         <p className="text-gray-600">Buat akun Solvia Finance Anda</p>

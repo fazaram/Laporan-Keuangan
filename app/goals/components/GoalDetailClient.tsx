@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { editAllocation, deleteAllocation, reallocateFunds } from '@/app/actions/allocation';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ToastProvider';
 
 export default function GoalDetailClient({ goal, otherGoals, availableSurplus }: { goal: any, otherGoals: any[], availableSurplus: number }) {
     const router = useRouter();
+    const { showToast, showConfirm } = useToast();
     
     // UI State
     const [loading, setLoading] = useState(false);
@@ -43,11 +45,17 @@ export default function GoalDetailClient({ goal, otherGoals, availableSurplus }:
     };
 
     const handleDelete = async (allocationId: string) => {
-        if (!confirm('Anda yakin ingin menghapus alokasi ini? Saldo akan diretur ke saldo bebas.')) return;
+        const confirmed = await showConfirm({
+            title: 'Hapus Alokasi',
+            message: 'Anda yakin ingin menghapus alokasi ini? Dana akan dikembalikan ke saldo bebas.',
+            confirmText: 'Ya, Hapus',
+            danger: true,
+        });
+        if (!confirmed) return;
         setLoading(true);
         const res = await deleteAllocation(allocationId);
-        if (res.error) alert(res.error);
-        else router.refresh();
+        if (res.error) showToast(res.error, 'error');
+        else { showToast('Alokasi berhasil dihapus', 'success'); router.refresh(); }
         setLoading(false);
     };
 
@@ -66,6 +74,7 @@ export default function GoalDetailClient({ goal, otherGoals, availableSurplus }:
             setError(res.error);
         } else {
             setReallocateMode(null);
+            showToast('Dana berhasil dipindahkan!', 'success');
             router.refresh();
         }
         setLoading(false);

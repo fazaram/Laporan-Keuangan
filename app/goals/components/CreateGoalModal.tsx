@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { createGoal } from '@/app/actions/goal';
+import { useToast } from '@/components/ToastProvider';
 
 export default function CreateGoalModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const { showToast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -17,8 +19,9 @@ export default function CreateGoalModal() {
         setIsLoading(false);
         if (res.success) {
             setIsOpen(false);
+            showToast('Tabungan baru berhasil dibuat! 🎯', 'success');
         } else {
-            alert(res.error || 'Terjadi kesalahan');
+            showToast(res.error || 'Terjadi kesalahan', 'error');
         }
     };
 

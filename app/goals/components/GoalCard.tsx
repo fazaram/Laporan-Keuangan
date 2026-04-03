@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { deleteGoal, updateGoal } from '@/app/actions/goal';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/components/ToastProvider';
 
 interface GoalCardProps {
     goal: {
@@ -20,6 +21,7 @@ interface GoalCardProps {
 
 export default function GoalCard({ goal }: GoalCardProps) {
     const router = useRouter();
+    const { showToast, showConfirm } = useToast();
     const [isDeleting, setIsDeleting] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editLoading, setEditLoading] = useState(false);
@@ -43,9 +45,17 @@ export default function GoalCard({ goal }: GoalCardProps) {
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm('Apakah Anda yakin ingin menghapus goal ini?')) return;
+        const confirmed = await showConfirm({
+            title: 'Hapus Tabungan',
+            message: 'Apakah Anda yakin ingin menghapus tabungan ini? Semua riwayat alokasi akan ikut terhapus.',
+            confirmText: 'Ya, Hapus',
+            danger: true,
+        });
+        if (!confirmed) return;
         setIsDeleting(true);
-        await deleteGoal(goal.id);
+        const res = await deleteGoal(goal.id);
+        if ((res as any)?.error) showToast((res as any).error, 'error');
+        else showToast('Tabungan berhasil dihapus', 'success');
         setIsDeleting(false);
     };
 
@@ -82,6 +92,7 @@ export default function GoalCard({ goal }: GoalCardProps) {
             setEditError(res.error);
         } else {
             setShowEditModal(false);
+            showToast('Tabungan berhasil diperbarui!', 'success');
             router.refresh();
         }
     };

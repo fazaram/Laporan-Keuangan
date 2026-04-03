@@ -159,10 +159,12 @@ export async function allocateFunds(amountToAllocate: number) {
                 updates.push(
                     prisma.goalAllocation.create({
                         data: {
+                            userId: session.user.id,
                             goalId: goal.id,
                             amount: allocated,
                             month,
-                            year
+                            year,
+                            description: 'Alokasi Otomatis'
                         }
                     })
                 );
@@ -181,6 +183,39 @@ export async function allocateFunds(amountToAllocate: number) {
     } catch (error: any) {
         console.error('Error allocating funds:', error);
         return { error: error.message || 'Gagal mengalokasikan tabungan' };
+    }
+}
+
+export async function updateGoal(id: string, data: { name: string; targetAmount: number; priority: 'LOW' | 'MEDIUM' | 'HIGH'; durationMonths: number }) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) throw new Error('Unauthorized');
+
+        if (!data.name || isNaN(data.targetAmount) || data.targetAmount <= 0) {
+            return { error: 'Data tidak valid' };
+        }
+
+        const goal = await prisma.goal.findUnique({ where: { id, userId: session.user.id } });
+        if (!goal) return { error: 'Goal tidak ditemukan' };
+
+        // Jika target baru lebih kecil dari yang terkumpul, naikkan status
+        const newStatus = Number(goal.currentAmount) >= data.targetAmount ? 'COMPLETED' : 'ACTIVE';
+
+        await prisma.goal.update({
+            where: { id, userId: session.user.id },
+            data: {
+                name: data.name,
+                targetAmount: data.targetAmount,
+                priority: data.priority,
+                durationMonths: data.durationMonths,
+                status: newStatus,
+            },
+        });
+
+        revalidatePath('/goals');
+        return { success: true };
+    } catch (error: any) {
+        return { error: error.message || 'Gagal mengupdate goal' };
     }
 }
 

@@ -26,6 +26,7 @@ model User {
   yearlyAnalyses YearlyAnalysis[]
   auditLogs AuditLog[]
   goals     Goal[]
+  goalAllocations GoalAllocation[]
 
   @@map("users")
 }
@@ -168,15 +169,20 @@ model Goal {
 
 model GoalAllocation {
   id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalId      String
   goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   amount      Decimal  @db.Decimal(15, 2)
   month       Int
   year        Int
+  description String?  @db.Text
   
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([goalId])
+  @@index([userId])
   @@index([month, year])
   @@map("goal_allocations")
 }

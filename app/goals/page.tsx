@@ -2,7 +2,10 @@ import { getGoals, getMonthlyFinancials } from '@/app/actions/goal';
 import GoalCard from './components/GoalCard';
 import CreateGoalModal from './components/CreateGoalModal';
 import AllocationPanel from './components/AllocationPanel';
+import ManualAllocationModal from './components/ManualAllocationModal';
 import { Navbar } from '@/components/Navbar';
+import { getAvailableSurplus } from '@/app/actions/allocation';
+import Link from 'next/link';
 
 export const metadata = {
     title: 'Tabungan / Goals - Laporan Keuangan',
@@ -10,10 +13,10 @@ export const metadata = {
 
 export default async function GoalsPage({ searchParams }: { searchParams: { tab?: string } }) {
     const goals = await getGoals();
-    const financials = await getMonthlyFinancials();
+    const { surplus } = await getAvailableSurplus();
     
     const currentTab = searchParams?.tab || 'semua';
-    let remainingSurplus = Math.max(0, financials.surplus);
+    const remainingSurplus = surplus;
     
     // Header for Smart Alert
     const activeGoals = goals.filter((g: any) => g.status === 'ACTIVE');
@@ -32,8 +35,8 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
         totalNeededThisMonth += needed;
     });
 
-    const isDeficit = financials.surplus < totalNeededThisMonth;
-    const isSurplus = financials.surplus > totalNeededThisMonth;
+    const isDeficit = surplus < totalNeededThisMonth;
+    const isSurplus = surplus > totalNeededThisMonth;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -58,9 +61,9 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
                     <div>
                         <h4 className="font-semibold text-red-900">Peringatan Defisit Tabungan</h4>
                         <p className="text-red-700 mt-1 text-sm">
-                            Sisa uang bulan ini (Rp {financials.surplus.toLocaleString('id-ID')}) lebih kecil dari total 
+                            Sisa uang tabungan bebas (Rp {surplus.toLocaleString('id-ID')}) lebih kecil dari total 
                             kebutuhan tabungan bulan ini (Rp {totalNeededThisMonth.toLocaleString('id-ID')}). 
-                            Target tabungan berpotensi tidak tercapai. Rekomendasi: Kurangi pengeluaran atau perpanjang durasi goal.
+                            Target tabungan berpotensi tidak tercapai otomatis.
                         </p>
                     </div>
                 </div>
@@ -76,8 +79,8 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
                     <div>
                         <h4 className="font-semibold text-green-900">Kondisi Surplus!</h4>
                         <p className="text-green-700 mt-1 text-sm">
-                            Sisa uang bulan ini mencukupi untuk semua target tabungan. Anda memiliki kelebihan sebesar 
-                            Rp {(financials.surplus - totalNeededThisMonth).toLocaleString('id-ID')}. Anda bisa melimpahkannya ke saldo bebas atau menambah alokasi.
+                            Sisa saldo Anda mencukupi untuk dialokasikan manual. Anda memiliki kelebihan dana tabungan sebesar 
+                            Rp {(surplus).toLocaleString('id-ID')}. Anda bisa melimpahkannya ke target tabungan Anda.
                         </p>
                     </div>
                 </div>
@@ -87,10 +90,16 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
                 {/* Kiri: Daftar Goals */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <h2 className="font-semibold text-gray-900">Daftar Target Tabungan</h2>
-                        <span className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium">
-                            {activeGoals.length} Aktif
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <h2 className="font-semibold text-gray-900">Daftar Target Tabungan</h2>
+                            <span className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium">
+                                {activeGoals.length} Aktif
+                            </span>
+                        </div>
+                        <ManualAllocationModal 
+                            availableSurplus={surplus} 
+                            activeGoals={JSON.parse(JSON.stringify(activeGoals))} 
+                        />
                     </div>
 
                     {/* Secondary Navbar / Tabs */}
@@ -132,16 +141,18 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
                                 if (currentTab === 'selesai') return goal.status === 'COMPLETED';
                                 return true;
                             }).map((goal: any) => (
-                                <GoalCard key={goal.id} goal={goal} />
+                                <Link key={goal.id} href={`/goals/${goal.id}`} className="block transition-transform hover:-translate-y-1">
+                                    <GoalCard goal={goal} />
+                                </Link>
                             ))}
                         </div>
                     )}
                 </div>
 
-                {/* Kanan: Panel Alokasi */}
+                {/* Kanan: Panel Alokasi (Optional Auto) */}
                 <div>
                     <AllocationPanel 
-                        availableSurplus={Math.max(0, financials.surplus)} 
+                        availableSurplus={Math.max(0, surplus)} 
                         totalNeeded={totalNeededThisMonth}
                         hasActiveGoals={activeGoals.length > 0}
                     />

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { deleteGoal, updateGoal } from '@/app/actions/goal';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface GoalCardProps {
     goal: {
@@ -24,29 +25,20 @@ export default function GoalCard({ goal }: GoalCardProps) {
     const [editLoading, setEditLoading] = useState(false);
     const [editError, setEditError] = useState('');
 
-    // Edit form state
     const [editName, setEditName] = useState(goal.name);
     const [editTarget, setEditTarget] = useState(goal.targetAmount.toString());
     const [editPriority, setEditPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>(goal.priority);
     const [editDuration, setEditDuration] = useState(goal.durationMonths.toString());
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
+    const formatCurrency = (amount: number) =>
+        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
     const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
-    
     const now = new Date();
     const startDate = new Date(goal.startDate);
     const monthsPassed = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
     const remainingMonths = Math.max(0, goal.durationMonths - monthsPassed);
-    const neededPerMonth = remainingMonths > 0 
-        ? Math.max(0, goal.targetAmount - goal.currentAmount) / remainingMonths 
-        : 0;
+    const neededPerMonth = remainingMonths > 0 ? Math.max(0, goal.targetAmount - goal.currentAmount) / remainingMonths : 0;
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -60,7 +52,6 @@ export default function GoalCard({ goal }: GoalCardProps) {
     const openEdit = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // Reset form ke nilai asli
         setEditName(goal.name);
         setEditTarget(goal.targetAmount.toString());
         setEditPriority(goal.priority);
@@ -100,13 +91,13 @@ export default function GoalCard({ goal }: GoalCardProps) {
         MEDIUM: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         LOW: 'bg-green-100 text-green-800 border-green-200',
     };
-
     const priorityLabels = { HIGH: 'Tinggi', MEDIUM: 'Sedang', LOW: 'Rendah' };
 
     return (
         <>
-            <div className={`bg-white rounded-xl shadow-sm border p-5 transition-all hover:shadow-md ${goal.status === 'COMPLETED' ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
-                <div className="flex justify-between items-start mb-4">
+            <div className={`bg-white rounded-xl shadow-sm border transition-all hover:shadow-md hover:-translate-y-0.5 overflow-hidden ${goal.status === 'COMPLETED' ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
+                {/* Header: nama + tombol edit/hapus */}
+                <div className="flex justify-between items-start p-5 pb-3">
                     <div className="flex-1 min-w-0 pr-2">
                         <h3 className="font-semibold text-lg text-gray-900 truncate">{goal.name}</h3>
                         <div className="flex gap-2 mt-2 flex-wrap">
@@ -121,8 +112,7 @@ export default function GoalCard({ goal }: GoalCardProps) {
                         </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                        {/* Edit Button */}
-                        <button 
+                        <button
                             onClick={openEdit}
                             className="text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-lg hover:bg-blue-50"
                             title="Edit Goal"
@@ -131,8 +121,7 @@ export default function GoalCard({ goal }: GoalCardProps) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                         </button>
-                        {/* Delete Button */}
-                        <button 
+                        <button
                             onClick={handleDelete}
                             disabled={isDeleting}
                             className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
@@ -145,43 +134,50 @@ export default function GoalCard({ goal }: GoalCardProps) {
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <div>
-                        <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-600">Progres ({progress}%)</span>
-                            <span className="font-medium text-gray-900">{formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}</span>
+                {/* Body — klik untuk ke halaman detail alokasi */}
+                <Link href={`/goals/${goal.id}`} className="block px-5 pb-5 group">
+                    <div className="space-y-4">
+                        <div>
+                            <div className="flex justify-between text-sm mb-1">
+                                <span className="text-gray-600">Progres ({progress}%)</span>
+                                <span className="font-medium text-gray-900">{formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}</span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                                <div
+                                    className={`h-2.5 rounded-full transition-all duration-500 ${goal.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'}`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                            <div 
-                                className={`h-2.5 rounded-full transition-all duration-500 ${goal.status === 'COMPLETED' ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'}`}
-                                style={{ width: `${progress}%` }}
-                            ></div>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 text-sm">
-                        <div>
-                            <p className="text-gray-500 text-xs">Sisa Waktu</p>
-                            <p className="font-medium text-gray-900">{remainingMonths} Bulan</p>
+                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100 text-sm">
+                            <div>
+                                <p className="text-gray-500 text-xs">Sisa Waktu</p>
+                                <p className="font-medium text-gray-900">{remainingMonths} Bulan</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-xs">Kebutuhan per Bulan</p>
+                                <p className="font-medium text-gray-900">{formatCurrency(neededPerMonth)}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-gray-500 text-xs">Kebutuhan per Bulan</p>
-                            <p className="font-medium text-gray-900">{formatCurrency(neededPerMonth)}</p>
+
+                        <div className="flex items-center gap-1 text-xs text-blue-500 font-medium group-hover:text-blue-700 transition-colors">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                            Kelola alokasi dana
                         </div>
                     </div>
-                </div>
+                </Link>
             </div>
 
             {/* Edit Modal */}
             {showEditModal && (
-                <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm"
-                    onClick={(e) => { if (e.target === e.currentTarget) setShowEditModal(false); }}
-                >
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
                         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                             <h3 className="font-bold text-gray-900 text-lg">Edit Target Tabungan</h3>
-                            <button 
+                            <button
                                 onClick={() => setShowEditModal(false)}
                                 className="text-gray-400 hover:text-gray-600 transition-colors p-1"
                             >
@@ -198,7 +194,6 @@ export default function GoalCard({ goal }: GoalCardProps) {
                                 </div>
                             )}
 
-                            {/* Nama Goal */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nama Goal</label>
                                 <input
@@ -211,7 +206,6 @@ export default function GoalCard({ goal }: GoalCardProps) {
                                 />
                             </div>
 
-                            {/* Target */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Target Nominal</label>
                                 <div className="relative">
@@ -231,7 +225,6 @@ export default function GoalCard({ goal }: GoalCardProps) {
                                 )}
                             </div>
 
-                            {/* Prioritas */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Prioritas</label>
                                 <div className="grid grid-cols-3 gap-2">
@@ -242,11 +235,9 @@ export default function GoalCard({ goal }: GoalCardProps) {
                                             onClick={() => setEditPriority(p)}
                                             className={`py-2.5 px-3 rounded-lg text-sm font-medium border transition-all ${
                                                 editPriority === p
-                                                    ? p === 'HIGH' 
-                                                        ? 'bg-red-500 text-white border-red-500'
-                                                        : p === 'MEDIUM'
-                                                        ? 'bg-yellow-500 text-white border-yellow-500'
-                                                        : 'bg-green-500 text-white border-green-500'
+                                                    ? p === 'HIGH' ? 'bg-red-500 text-white border-red-500'
+                                                    : p === 'MEDIUM' ? 'bg-yellow-500 text-white border-yellow-500'
+                                                    : 'bg-green-500 text-white border-green-500'
                                                     : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                                             }`}
                                         >
@@ -256,7 +247,6 @@ export default function GoalCard({ goal }: GoalCardProps) {
                                 </div>
                             </div>
 
-                            {/* Durasi */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Durasi (Bulan)</label>
                                 <input

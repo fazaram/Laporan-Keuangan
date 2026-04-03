@@ -11,11 +11,13 @@ export const metadata = {
     title: 'Tabungan / Goals - Laporan Keuangan',
 };
 
-export default async function GoalsPage({ searchParams }: { searchParams: { tab?: string } }) {
+export default async function GoalsPage({ searchParams }: { searchParams: { tab?: string; page?: string } }) {
     const goals = await getGoals();
     const { surplus } = await getAvailableSurplus();
     
     const currentTab = searchParams?.tab || 'semua';
+    const currentPage = Math.max(1, parseInt(searchParams?.page || '1'));
+    const ITEMS_PER_PAGE = 6;
     const remainingSurplus = surplus;
     
     // Header for Smart Alert
@@ -134,19 +136,79 @@ export default async function GoalsPage({ searchParams }: { searchParams: { tab?
                                 Mulai buat target tabungan pertama Anda, misalnya untuk Dana Darurat, Liburan, atau Gadget baru.
                             </p>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {goals.filter((goal: any) => {
-                                if (currentTab === 'aktif') return goal.status === 'ACTIVE';
-                                if (currentTab === 'selesai') return goal.status === 'COMPLETED';
-                                return true;
-                            }).map((goal: any) => (
-                                <Link key={goal.id} href={`/goals/${goal.id}`} className="block transition-transform hover:-translate-y-1">
-                                    <GoalCard goal={goal} />
-                                </Link>
-                            ))}
-                        </div>
-                    )}
+                    ) : (() => {
+                        const filtered = goals.filter((goal: any) => {
+                            if (currentTab === 'aktif') return goal.status === 'ACTIVE';
+                            if (currentTab === 'selesai') return goal.status === 'COMPLETED';
+                            return true;
+                        });
+                        const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+                        const safePage = Math.min(currentPage, totalPages);
+                        const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+                        
+                        const buildHref = (p: number) => `?tab=${currentTab}&page=${p}`;
+
+                        return (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {paginated.map((goal: any) => (
+                                        <GoalCard key={goal.id} goal={goal} />
+                                    ))}
+                                </div>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-2">
+                                        <p className="text-sm text-gray-500">
+                                            Menampilkan {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} dari {filtered.length} tabungan
+                                        </p>
+                                        <div className="flex items-center gap-1">
+                                            {/* Prev */}
+                                            {safePage > 1 ? (
+                                                <a href={buildHref(safePage - 1)} className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                                                    Prev
+                                                </a>
+                                            ) : (
+                                                <span className="px-3 py-1.5 text-sm font-medium text-gray-300 bg-gray-50 border border-gray-100 rounded-lg cursor-not-allowed flex items-center gap-1">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                                                    Prev
+                                                </span>
+                                            )}
+
+                                            {/* Page Numbers */}
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                                                <a
+                                                    key={p}
+                                                    href={buildHref(p)}
+                                                    className={`w-9 h-9 flex items-center justify-center text-sm font-medium rounded-lg transition-colors ${
+                                                        p === safePage
+                                                            ? 'bg-blue-600 text-white'
+                                                            : 'text-gray-600 bg-white border border-gray-200 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    {p}
+                                                </a>
+                                            ))}
+
+                                            {/* Next */}
+                                            {safePage < totalPages ? (
+                                                <a href={buildHref(safePage + 1)} className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1">
+                                                    Next
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                                </a>
+                                            ) : (
+                                                <span className="px-3 py-1.5 text-sm font-medium text-gray-300 bg-gray-50 border border-gray-100 rounded-lg cursor-not-allowed flex items-center gap-1">
+                                                    Next
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
                 </div>
 
                 {/* Kanan: Panel Alokasi (Optional Auto) */}

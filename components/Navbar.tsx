@@ -11,6 +11,7 @@ export function Navbar() {
     const navItems = [
         { href: '/dashboard', label: 'Dashboard', icon: '📊' },
         { href: '/transactions', label: 'Transaksi', icon: '💰' },
+        { href: '/goals', label: 'Tabungan', icon: '🎯' },
         { href: '/reports/monthly', label: 'Laporan Bulanan', icon: '📅' },
         { href: '/reports/yearly', label: 'Laporan Tahunan', icon: '📈' },
         { href: '/audit', label: 'Audit Log', icon: '📋', viewerAllowed: true },

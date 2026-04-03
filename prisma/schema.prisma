@@ -16,6 +16,8 @@ model User {
   password  String
   name      String?
   role      UserRole @default(USER)
+  resetToken       String?  @unique
+  resetTokenExpiry DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -23,6 +25,7 @@ model User {
   monthlyAnalyses MonthlyAnalysis[]
   yearlyAnalyses YearlyAnalysis[]
   auditLogs AuditLog[]
+  goals     Goal[]
 
   @@map("users")
 }
@@ -140,4 +143,51 @@ enum AuditAction {
   CREATE
   UPDATE
   DELETE
+}
+
+model Goal {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  targetAmount   Decimal        @db.Decimal(15, 2)
+  currentAmount  Decimal        @default(0) @db.Decimal(15, 2)
+  durationMonths Int
+  startDate      DateTime       @db.Date
+  priority       GoalPriority   @default(MEDIUM)
+  status         GoalStatus     @default(ACTIVE)
+
+  allocations    GoalAllocation[]
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId])
+  @@map("goals")
+}
+
+model GoalAllocation {
+  id          String   @id @default(cuid())
+  goalId      String
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  amount      Decimal  @db.Decimal(15, 2)
+  month       Int
+  year        Int
+  
+  createdAt   DateTime @default(now())
+
+  @@index([goalId])
+  @@index([month, year])
+  @@map("goal_allocations")
+}
+
+enum GoalPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
 }

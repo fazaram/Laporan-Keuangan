@@ -3,6 +3,8 @@
 import { signIn } from 'next-auth/react';
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { PasswordInput } from '@/components/PasswordInput';
+import Link from 'next/link';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -87,20 +89,22 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                Password
-                            </label>
-                            <input
+                        <div className="flex flex-col gap-1">
+                            <PasswordInput
                                 id="password"
-                                type="password"
+                                label="Password"
+                                name="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                                 placeholder="••••••••"
                                 disabled={loading}
                             />
+                            <div className="text-right mt-1">
+                                <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                                    Lupa password?
+                                </Link>
+                            </div>
                         </div>
 
                         <button
@@ -122,6 +126,12 @@ export default function LoginPage() {
                         </button>
                     </form>
 
+                        <div className="mt-6 text-center text-sm text-gray-600">
+                            Belum punya akun?{' '}
+                            <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+                                Daftar Sekarang
+                            </Link>
+                        </div>
 
                 </div>
 

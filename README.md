@@ -1,26 +1,28 @@
 # 💰 Laporan Keuangan  
-### Personal Finance Management Web App
+### AI-Powered Personal Finance Management Web App
 
-Aplikasi web modern untuk **mengelola keuangan pribadi** dengan laporan **bulanan & tahunan**, **analisis keuangan**, dan **audit trail berbasis role**.
+Aplikasi web modern untuk **mengelola keuangan pribadi** dengan sistem **tracking, perencanaan tabungan (goals), dan analisis keuangan berbasis AI**.
 
 ---
 
 ## ✨ Highlight Features
-- 📊 **Dashboard Real-Time** (Pemasukan, Pengeluaran, Saldo)
+- 📊 **Dashboard Real-Time** (Saldo, Pemasukan, Pengeluaran + Top Goals)
 - 💳 **Manajemen Transaksi** (Income & Expense)
-- 📈 **Laporan Bulanan & Tahunan** + Grafik
-- 📤 **Export Excel** (dengan chart)
-- 🔍 **Audit Log Aktivitas**
-- 🔐 **Role-Based Access Control** (ADMIN, USER, VIEWER)
+- 🎯 **Multi Goals Tabungan** (Target, Progress, & Perhitungan Otomatis)
+- 🔄 **Alokasi Dana & Reallocation** (Manual & Auto, dengan validasi saldo)
+- 🤖 **AI Financial Assistant** (Chat & Insight berbasis data user)
+- 📈 **Laporan Keuangan Pintar** (Bulanan & Tahunan + Grafik & AI Analysis)
+- 🔐 **Authentication & Role-Based Access Control** (ADMIN, USER, VIEWER)
 
 ---
 
 ## 🛠️ Tech Stack
 - **Next.js 14 (App Router)** + React + TypeScript  
 - **Tailwind CSS**  
-- **MySQL + Prisma ORM**  
-- **NextAuth.js** (Authentication)  
-- **Chart.js** & **ExcelJS**
+- **MySQL / PostgreSQL + Prisma ORM**  
+- **NextAuth.js (Auth.js)**  
+- **Chart.js**  
+- **OpenAI API (AI Integration)**
 
 ---
 

@@ -50,6 +50,12 @@ export async function syncFixedIncomeTransactions(userId: string) {
 
                 const transactionDate = new Date(currentIterDate.getFullYear(), currentIterDate.getMonth(), transactionDay);
 
+                // Skip if the determined transaction date is still in the future
+                if (transactionDate > now) {
+                    currentIterDate.setMonth(currentIterDate.getMonth() + 1);
+                    continue;
+                }
+
                 await prisma.transaction.create({
                     data: {
                         userId: userId,

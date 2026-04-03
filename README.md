@@ -66,8 +66,8 @@ Aplikasi web modern untuk **mengelola keuangan pribadi** dengan sistem **trackin
 ### Goals / Tabungan
 ![Goals Preview](./public/screenshots/goals.png)
 
-### AI Chat Assistant
-![AI Chat Preview](./public/screenshots/chat.png)
+### Laporan Tahunan
+![Laporan Tahunan Preview](./public/screenshots/laporan.png)
 
 ---
 

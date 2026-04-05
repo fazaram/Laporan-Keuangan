@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { TransactionType } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import { generateAIResponse } from '@/lib/ai';
 
 export async function GET(req: NextRequest) {
     try {
@@ -15,7 +12,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (!process.env.GEMINI_API_KEY) {
-            return NextResponse.json({ insights: [] });
+            return NextResponse.json({ insights: ["Konfigurasi Gemini API tidak ditemukan."] });
         }
 
         // Ambil data keuangan user (30 hari terakhir)
@@ -62,9 +59,10 @@ FORMAT:
 - Pastikan insight spesifik dan berikan apresiasi jika ada peningkatan atau saran jika pengeluaran terlalu tinggi.
 `;
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-        const result = await model.generateContent(systemPrompt);
-        const responseText = result.response.text();
+        const responseText = await generateAIResponse([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: 'Berikan analisis keuangan saya dalam 3-5 poin singkat.' }
+        ]);
         
         console.log('AI Raw Response:', responseText);
 
@@ -85,7 +83,7 @@ FORMAT:
         // Handle Rate Limit Error (429)
         if (error.message?.includes('429') || error.status === 429) {
             return NextResponse.json({ 
-                insights: ["Limit harian AI habis (Free Tier). Silakan coba lagi besok."] 
+                insights: ["Limit harian AI habis. Silakan coba lagi besok."] 
             });
         }
 
@@ -95,3 +93,4 @@ FORMAT:
         });
     }
 }
+

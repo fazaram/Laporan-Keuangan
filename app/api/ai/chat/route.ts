@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { TransactionType } from '@prisma/client';
 import { prisma } from '@/lib/db';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import { generateAIResponse, Message } from '@/lib/ai';
 
 export async function POST(req: NextRequest) {
     try {
@@ -72,23 +69,16 @@ ATURAN PENTING:
 4. Selalu mendasari saran Anda pada data keuangan pengguna di atas.
 `;
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const messages: Message[] = [
+            { role: 'system', content: systemPrompt },
+            ...history.map((msg: any) => ({
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content
+            })),
+            { role: 'user', content: message }
+        ];
 
-        const formattedHistory = history.map((msg: any) => ({
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.content }]
-        }));
-
-        const chat = model.startChat({
-            history: [
-                { role: 'user', parts: [{ text: systemPrompt }] },
-                { role: 'model', parts: [{ text: "Baik, saya mengerti. Saya adalah Solvia Assistant, asisten keuangan pribadi Anda. Saya akan membantu Anda berdasarkan data keuangan yang diberikan." }] },
-                ...formattedHistory
-            ],
-        });
-
-        const result = await chat.sendMessage(message);
-        const reply = result.response.text();
+        const reply = await generateAIResponse(messages);
 
         // Simpan ke database
         try {
@@ -108,7 +98,6 @@ ATURAN PENTING:
             });
         } catch (e) {
             console.error('Failed to save chat history:', e);
-            // Tetap direturn agar user tidak terganggu
         }
 
         return NextResponse.json({ reply });
@@ -119,15 +108,8 @@ ATURAN PENTING:
         // Handle Rate Limit Error (429)
         if (error.message?.includes('429') || error.status === 429) {
             return NextResponse.json({ 
-                error: 'Limit harian AI habis (Free Tier). Silakan coba lagi beberapa saat lagi atau besok.' 
+                error: 'Limit harian AI habis. Silakan coba lagi beberapa saat lagi atau besok.' 
             }, { status: 429 });
-        }
-
-        // Handle Model Not Found (404)
-        if (error.message?.includes('404') || error.status === 404) {
-            return NextResponse.json({ 
-                error: `Model AI tidak ditemukan (404). Silakan hubungi admin atau coba lagi nanti. Detail: ${error.message}` 
-            }, { status: 404 });
         }
 
         return NextResponse.json({ 
@@ -135,3 +117,4 @@ ATURAN PENTING:
         }, { status: 500 });
     }
 }
+

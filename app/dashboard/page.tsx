@@ -11,6 +11,8 @@ import { AiInsightCard } from '@/components/AiInsightCard';
 import { DashboardCharts } from '@/components/DashboardCharts';
 import { syncFixedIncomeTransactions } from '@/app/actions/fixed-income-sync';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
 

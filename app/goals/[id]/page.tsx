@@ -7,9 +7,11 @@ import Link from 'next/link';
 import GoalDetailClient from '../components/GoalDetailClient';
 import { getAvailableSurplus } from '@/app/actions/allocation';
 
+export const dynamic = 'force-dynamic';
+
 export default async function GoalDetailPage({ params }: { params: { id: string } }) {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
         redirect('/login');
     }
@@ -70,7 +72,7 @@ export default async function GoalDetailPage({ params }: { params: { id: string 
                             </span>
                         )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100">
                         <div>
                             <p className="text-sm text-gray-500 mb-1">Target</p>
@@ -91,8 +93,8 @@ export default async function GoalDetailPage({ params }: { params: { id: string 
 
                 {/* Client Component untuk Daftar Alokasi & Rekayasa Moda */}
                 {/* Kita butuh stringify data prisma krn Number Decimal tdk serialize scr native */}
-                <GoalDetailClient 
-                    goal={JSON.parse(JSON.stringify(goal))} 
+                <GoalDetailClient
+                    goal={JSON.parse(JSON.stringify(goal))}
                     otherGoals={JSON.parse(JSON.stringify(otherGoals))}
                     availableSurplus={surplus}
                 />

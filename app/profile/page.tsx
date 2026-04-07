@@ -8,6 +8,8 @@ import { formatCurrency } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default function ProfilePage() {
     const { data: session, status } = useSession();
     const router = useRouter();

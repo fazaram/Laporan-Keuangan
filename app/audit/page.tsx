@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { AuditLogItem } from '@/components/AuditLogItem';
 
+export const dynamic = 'force-dynamic';
+
 interface AuditLog {
     id: string;
     action: 'CREATE' | 'UPDATE' | 'DELETE';

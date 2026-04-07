@@ -11,6 +11,8 @@ export const metadata = {
     title: 'Tabungan / Goals - Laporan Keuangan',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function GoalsPage({ searchParams }: { searchParams: { tab?: string; page?: string } }) {
     const goals = await getGoals();
     const { surplus } = await getAvailableSurplus();

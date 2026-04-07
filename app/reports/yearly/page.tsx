@@ -5,6 +5,8 @@ import { Navbar } from '@/components/Navbar';
 import { LineChart } from '@/components/charts/LineChart';
 import { formatCurrency, getYearsArray, getCurrentYear } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface YearlyReport {
     year: number;
     totalIncome: number;

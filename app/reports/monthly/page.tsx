@@ -5,6 +5,8 @@ import { Navbar } from '@/components/Navbar';
 import { LineChart } from '@/components/charts/LineChart';
 import { formatCurrency, getMonthsArray, getYearsArray, getCurrentMonth, getCurrentYear } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface MonthlyReport {
     year: number;
     month: number;

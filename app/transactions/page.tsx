@@ -6,6 +6,8 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface Transaction {
     id: string;
     date: string;

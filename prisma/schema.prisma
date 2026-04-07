@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,83 +8,64 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      UserRole @default(USER)
-  resetToken       String?  @unique
-  resetTokenExpiry DateTime?
-  bio              String?  @db.Text
-  birthDate        DateTime? @db.Date
-  profileImage     String?
-  fixedIncome      Decimal? @db.Decimal(15, 2)
-  fixedIncomeStartDate DateTime? @db.Date
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  transactions Transaction[]
-  monthlyAnalyses MonthlyAnalysis[]
-  yearlyAnalyses YearlyAnalysis[]
-  auditLogs AuditLog[]
-  goals     Goal[]
-  goalAllocations GoalAllocation[]
-  chatHistories ChatHistory[]
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  password             String
+  name                 String?
+  role                 UserRole          @default(USER)
+  resetToken           String?           @unique
+  resetTokenExpiry     DateTime?
+  bio                  String?
+  birthDate            DateTime?         @db.Date
+  profileImage         String?
+  fixedIncome          Decimal?          @db.Decimal(15, 2)
+  fixedIncomeStartDate DateTime?         @db.Date
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  auditLogs            AuditLog[]
+  chatHistories        ChatHistory[]
+  goalAllocations      GoalAllocation[]
+  goals                Goal[]
+  monthlyAnalyses      MonthlyAnalysis[]
+  transactions         Transaction[]
+  yearlyAnalyses       YearlyAnalysis[]
 
   @@map("users")
 }
 
-enum UserRole {
-  VIEWER
-  USER
-  ADMIN
-}
-
 model Transaction {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   date        DateTime
   category    String
-  amount      Decimal  @db.Decimal(15, 2)
+  amount      Decimal         @db.Decimal(15, 2)
   type        TransactionType
-  description String?  @db.Text
-  
+  description String?
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
   @@index([userId, type])
   @@map("transactions")
 }
 
-enum TransactionType {
-  INCOME
-  EXPENSE
-}
-
 model MonthlyAnalysis {
-  id          String   @id @default(cuid())
-  year        Int
-  month       Int
-  
-  totalIncome  Decimal  @db.Decimal(15, 2)
-  totalExpense Decimal  @db.Decimal(15, 2)
-  balance      Decimal  @db.Decimal(15, 2)
-  
-  previousMonthIncome  Decimal?  @db.Decimal(15, 2)
-  previousMonthExpense Decimal?  @db.Decimal(15, 2)
-  previousMonthBalance Decimal?  @db.Decimal(15, 2)
-  
-  analysis     String?  @db.Text
-  recommendations String? @db.Text
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  year                 Int
+  month                Int
+  totalIncome          Decimal  @db.Decimal(15, 2)
+  totalExpense         Decimal  @db.Decimal(15, 2)
+  balance              Decimal  @db.Decimal(15, 2)
+  previousMonthIncome  Decimal? @db.Decimal(15, 2)
+  previousMonthExpense Decimal? @db.Decimal(15, 2)
+  previousMonthBalance Decimal? @db.Decimal(15, 2)
+  analysis             String?
+  recommendations      String?
+  userId               String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, year, month])
   @@index([userId])
@@ -95,28 +73,22 @@ model MonthlyAnalysis {
 }
 
 model YearlyAnalysis {
-  id          String   @id @default(cuid())
-  year        Int
-  
-  totalIncome  Decimal  @db.Decimal(15, 2)
-  totalExpense Decimal  @db.Decimal(15, 2)
-  balance      Decimal  @db.Decimal(15, 2)
-  
+  id                    String   @id @default(cuid())
+  year                  Int
+  totalIncome           Decimal  @db.Decimal(15, 2)
+  totalExpense          Decimal  @db.Decimal(15, 2)
+  balance               Decimal  @db.Decimal(15, 2)
   averageMonthlyIncome  Decimal  @db.Decimal(15, 2)
   averageMonthlyExpense Decimal  @db.Decimal(15, 2)
-  
-  previousYearIncome  Decimal?  @db.Decimal(15, 2)
-  previousYearExpense Decimal?  @db.Decimal(15, 2)
-  previousYearBalance Decimal?  @db.Decimal(15, 2)
-  
-  analysis     String?  @db.Text
-  recommendations String? @db.Text
-  
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  previousYearIncome    Decimal? @db.Decimal(15, 2)
+  previousYearExpense   Decimal? @db.Decimal(15, 2)
+  previousYearBalance   Decimal? @db.Decimal(15, 2)
+  analysis              String?
+  recommendations       String?
+  userId                String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, year])
   @@index([userId])
@@ -124,50 +96,38 @@ model YearlyAnalysis {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  action      AuditAction  
-  entityType  String       
-  entityId    String       
-  
-  oldData     Json?        
-  newData     Json?        
-  
-  ipAddress   String?
-  userAgent   String?
-  
-  createdAt   DateTime @default(now())
-  
+  id         String      @id @default(cuid())
+  userId     String
+  action     AuditAction
+  entityType String
+  entityId   String
+  oldData    Json?
+  newData    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([entityType, entityId])
   @@index([createdAt])
   @@map("audit_logs")
 }
 
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
-}
-
 model Goal {
-  id             String         @id @default(cuid())
+  id             String           @id @default(cuid())
   userId         String
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   name           String
-  targetAmount   Decimal        @db.Decimal(15, 2)
-  currentAmount  Decimal        @default(0) @db.Decimal(15, 2)
+  targetAmount   Decimal          @db.Decimal(15, 2)
+  currentAmount  Decimal          @default(0) @db.Decimal(15, 2)
   durationMonths Int
-  startDate      DateTime       @db.Date
-  priority       GoalPriority   @default(MEDIUM)
-  status         GoalStatus     @default(ACTIVE)
-
+  startDate      DateTime         @db.Date
+  priority       GoalPriority     @default(MEDIUM)
+  status         GoalStatus       @default(ACTIVE)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
   allocations    GoalAllocation[]
-
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("goals")
@@ -176,21 +136,49 @@ model Goal {
 model GoalAllocation {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   goalId      String
-  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
   amount      Decimal  @db.Decimal(15, 2)
   month       Int
   year        Int
-  description String?  @db.Text
-  
+  description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([goalId])
   @@index([userId])
   @@index([month, year])
   @@map("goal_allocations")
+}
+
+model ChatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("chat_histories")
+}
+
+enum UserRole {
+  VIEWER
+  USER
+  ADMIN
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
 }
 
 enum GoalPriority {
@@ -202,16 +190,4 @@ enum GoalPriority {
 enum GoalStatus {
   ACTIVE
   COMPLETED
-}
-
-model ChatHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String   // "user" | "assistant"
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-
-  @@index([userId, createdAt])
-  @@map("chat_histories")
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ToastProvider } from "@/components/ToastProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
           </ToastProvider>
         </AuthProvider>
         <FloatingChatButton />
+        <SpeedInsights />
       </body>
     </html>
   );

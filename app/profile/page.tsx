@@ -7,6 +7,7 @@ import { FixedIncomeModal } from '@/components/FixedIncomeModal';
 import { formatCurrency } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,7 +70,13 @@ export default function ProfilePage() {
                         <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 -mt-16 mb-6">
                             <div className="w-32 h-32 rounded-3xl border-4 border-white bg-white shadow-lg overflow-hidden flex items-center justify-center group relative cursor-pointer">
                                 {userData?.profileImage ? (
-                                    <img src={userData.profileImage} alt="Profile" className="w-full h-full object-cover" />
+                                    <Image
+                                        src={userData.profileImage}
+                                        alt="Profile"
+                                        width={128}
+                                        height={128}
+                                        className="w-full h-full object-cover"
+                                    />
                                 ) : (
                                     <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-600">
                                         <span className="text-4xl font-bold">{userData?.name?.charAt(0) || 'U'}</span>

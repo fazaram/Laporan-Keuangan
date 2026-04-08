@@ -7,11 +7,47 @@ import { prisma } from '@/lib/db';
 import { TransactionType } from '@prisma/client';
 import { formatCurrency, getCurrentMonth, getCurrentYear } from '@/lib/utils';
 import Link from 'next/link';
-import { AiInsightCard } from '@/components/AiInsightCard';
-import { DashboardCharts } from '@/components/DashboardCharts';
+import nextDynamic from 'next/dynamic';
 import { syncFixedIncomeTransactions } from '@/app/actions/fixed-income-sync';
 
 export const dynamic = 'force-dynamic';
+
+// Lazy load heavy client components — tidak block first paint
+const AiInsightCard = nextDynamic(
+    () => import('@/components/AiInsightCard').then((m) => ({ default: m.AiInsightCard })),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div className="space-y-3">
+                    <div className="h-4 bg-gray-100 rounded w-full"></div>
+                    <div className="h-4 bg-gray-100 rounded w-5/6"></div>
+                    <div className="h-4 bg-gray-100 rounded w-4/6"></div>
+                </div>
+            </div>
+        ),
+    }
+);
+
+const DashboardCharts = nextDynamic(
+    () => import('@/components/DashboardCharts').then((m) => ({ default: m.DashboardCharts })),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 h-[400px] animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-1/2 mb-6"></div>
+                    <div className="h-full bg-gray-100 rounded-xl"></div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 h-[400px] animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-1/2 mb-6"></div>
+                    <div className="h-full bg-gray-100 rounded-xl"></div>
+                </div>
+            </div>
+        ),
+    }
+);
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -29,30 +65,61 @@ export default async function DashboardPage() {
     const startDate = new Date(currentYear, currentMonth - 1, 1);
     const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59);
 
-    // VIEWER sees all users' data, USER/ADMIN see only their own
-    const transactionFilter: any = {
-        date: {
-            gte: startDate,
-            lte: endDate,
-        },
-    };
+    // Get previous month dates
+    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+    const prevStartDate = new Date(prevYear, prevMonth - 1, 1);
+    const prevEndDate = new Date(prevYear, prevMonth, 0, 23, 59, 59);
 
-    if (session.user.role !== 'VIEWER') {
-        transactionFilter.userId = session.user.id;
-    }
+    const isViewer = session.user.role === 'VIEWER';
+    const userId = session.user.id;
 
-    const transactionsRaw = await prisma.transaction.findMany({
-        where: transactionFilter,
-        orderBy: { date: 'desc' },
-        take: 10,
-    });
+    // ✅ Run ALL database queries in parallel — 4x faster than sequential
+    const [transactionsRaw, prevTransactions, allTransactions, topGoalsRaw] = await Promise.all([
+        // Query 1: Current month transactions (latest 10)
+        prisma.transaction.findMany({
+            where: {
+                date: { gte: startDate, lte: endDate },
+                ...(!isViewer && { userId }),
+            },
+            orderBy: { date: 'desc' },
+            take: 10,
+        }),
+        // Query 2: Previous month transactions (for comparison)
+        prisma.transaction.findMany({
+            where: {
+                date: { gte: prevStartDate, lte: prevEndDate },
+                ...(!isViewer && { userId }),
+            },
+        }),
+        // Query 3: All-time transactions (for total balance)
+        prisma.transaction.findMany({
+            where: isViewer ? {} : { userId },
+        }),
+        // Query 4: Top active goals
+        (prisma as any).goal.findMany({
+            where: isViewer
+                ? { status: 'ACTIVE' }
+                : { userId, status: 'ACTIVE' },
+            orderBy: { targetAmount: 'desc' },
+            take: 3,
+        }),
+    ]);
 
+    // Serialize transactions (convert Date & Decimal to plain JS types)
     const transactions = transactionsRaw.map((t: any) => ({
         ...t,
         amount: Number(t.amount),
-        date: t.date.toISOString(), // Convert Date to ISO string for safer serialization
+        date: t.date.toISOString(),
     }));
 
+    const topGoals = topGoalsRaw.map((g: any) => ({
+        ...g,
+        targetAmount: Number(g.targetAmount),
+        currentAmount: Number(g.currentAmount),
+    }));
+
+    // Calculate KPI values
     const currentIncome = transactions
         .filter((t) => t.type === TransactionType.INCOME)
         .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -60,29 +127,6 @@ export default async function DashboardPage() {
     const currentExpense = transactions
         .filter((t) => t.type === TransactionType.EXPENSE)
         .reduce((sum, t) => sum + Number(t.amount), 0);
-
-    const currentBalance = currentIncome - currentExpense;
-
-    // Get previous month for comparison
-    const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-    const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-    const prevStartDate = new Date(prevYear, prevMonth - 1, 1);
-    const prevEndDate = new Date(prevYear, prevMonth, 0, 23, 59, 59);
-
-    const prevTransactionFilter: any = {
-        date: {
-            gte: prevStartDate,
-            lte: prevEndDate,
-        },
-    };
-
-    if (session.user.role !== 'VIEWER') {
-        prevTransactionFilter.userId = session.user.id;
-    }
-
-    const prevTransactions = await prisma.transaction.findMany({
-        where: prevTransactionFilter,
-    });
 
     const prevIncome = prevTransactions
         .filter((t: any) => t.type === TransactionType.INCOME)
@@ -95,11 +139,6 @@ export default async function DashboardPage() {
     const incomeChange = prevIncome > 0 ? ((currentIncome - prevIncome) / prevIncome) * 100 : 0;
     const expenseChange = prevExpense > 0 ? ((currentExpense - prevExpense) / prevExpense) * 100 : 0;
 
-    // Fetch All-time Total Balance
-    const allTransactions = await prisma.transaction.findMany({
-        where: session.user.role !== 'VIEWER' ? { userId: session.user.id } : {},
-    });
-    
     const totalIncomeAllTime = allTransactions
         .filter((t) => t.type === TransactionType.INCOME)
         .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -107,20 +146,8 @@ export default async function DashboardPage() {
     const totalExpenseAllTime = allTransactions
         .filter((t) => t.type === TransactionType.EXPENSE)
         .reduce((sum, t) => sum + Number(t.amount), 0);
+
     const totalSaldo = totalIncomeAllTime - totalExpenseAllTime;
-
-    // Fetch Top Goals
-    const topGoalsRaw = await (prisma as any).goal.findMany({
-        where: session.user.role !== 'VIEWER' ? { userId: session.user.id, status: 'ACTIVE' } : { status: 'ACTIVE' },
-        orderBy: { targetAmount: 'desc' },
-        take: 3,
-    });
-
-    const topGoals = topGoalsRaw.map((g: any) => ({
-        ...g,
-        targetAmount: Number(g.targetAmount),
-        currentAmount: Number(g.currentAmount)
-    }));
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -177,16 +204,16 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* AI Insight Section */}
+                {/* AI Insight Section — lazy loaded */}
                 <div className="mb-8">
                     <AiInsightCard />
                 </div>
 
-                {/* AI Charts Section */}
-                <DashboardCharts 
-                    income={currentIncome} 
-                    expense={currentExpense} 
-                    transactions={transactions} 
+                {/* Charts Section — lazy loaded */}
+                <DashboardCharts
+                    income={currentIncome}
+                    expense={currentExpense}
+                    transactions={transactions}
                 />
 
                 {/* Quick Actions */}
@@ -215,7 +242,7 @@ export default async function DashboardPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="text-xl font-bold text-gray-900 mb-2">Lihat Laporan</h3>
-                                <p className="text-gray-600">Analisis keuangan bulanan & tahunan</p>
+                                <p className="text-gray-600">Analisis keuangan bulanan &amp; tahunan</p>
                             </div>
                             <svg className="w-8 h-8 text-blue-600 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -261,7 +288,7 @@ export default async function DashboardPage() {
                         )}
                     </div>
                 </div>
-                
+
                 {/* Top Goals Section */}
                 <div className="mt-8 bg-white rounded-xl shadow-md border border-gray-100 p-6">
                     <div className="flex items-center justify-between mb-6">
@@ -302,14 +329,14 @@ export default async function DashboardPage() {
                                         </div>
                                         <h3 className="font-bold text-gray-900 mb-1">{goal.name}</h3>
                                         <div className="text-xs text-gray-500 mb-4 truncate">Target: {formatCurrency(goal.targetAmount)}</div>
-                                        
+
                                         <div className="mb-2 flex justify-between items-end">
                                             <span className="font-semibold text-blue-600">{formatCurrency(goal.currentAmount)}</span>
                                             <span className="text-xs font-medium text-gray-500">{progress}%</span>
                                         </div>
-                                        
+
                                         <div className="w-full bg-gray-100 rounded-full h-2">
-                                            <div 
+                                            <div
                                                 className={`h-2 rounded-full transition-all duration-500 ${progress === 100 ? 'bg-green-500' : 'bg-blue-600'}`}
                                                 style={{ width: `${progress}%` }}
                                             ></div>

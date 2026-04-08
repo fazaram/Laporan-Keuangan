@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export function Navbar() {
@@ -46,7 +47,14 @@ export function Navbar() {
                     <div className="flex items-center">
                         <Link href="/dashboard" className="flex items-center gap-3">
                             <div className="w-10 h-10 overflow-hidden rounded-lg flex items-center justify-center">
-                                <img src="/logo.png" alt="Solvia Finance Logo" className="w-full h-full object-contain" />
+                                <Image
+                                    src="/logo.png"
+                                    alt="Solvia Finance Logo"
+                                    width={40}
+                                    height={40}
+                                    className="object-contain"
+                                    priority
+                                />
                             </div>
                             <span className="text-xl font-bold text-gray-900 tracking-tight">Solvia Finance</span>
                         </Link>
@@ -77,7 +85,13 @@ export function Navbar() {
                                 >
                                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-white overflow-hidden">
                                         {(session.user as any).profileImage ? (
-                                            <img src={(session.user as any).profileImage} alt="" className="w-full h-full object-cover" />
+                                            <Image
+                                                src={(session.user as any).profileImage}
+                                                alt="Profile"
+                                                width={36}
+                                                height={36}
+                                                className="object-cover w-full h-full"
+                                            />
                                         ) : (
                                             session.user.name?.charAt(0) || 'U'
                                         )}

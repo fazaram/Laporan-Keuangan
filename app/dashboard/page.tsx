@@ -9,26 +9,9 @@ import { formatCurrency, getCurrentMonth, getCurrentYear } from '@/lib/utils';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { syncFixedIncomeTransactions } from '@/app/actions/fixed-income-sync';
+import { TotalBalanceCard } from '@/components/TotalBalanceCard';
 
 export const dynamic = 'force-dynamic';
-
-// Lazy load heavy client components — tidak block first paint
-const AiInsightCard = nextDynamic(
-    () => import('@/components/AiInsightCard').then((m) => ({ default: m.AiInsightCard })),
-    {
-        ssr: false,
-        loading: () => (
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 animate-pulse">
-                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-                <div className="space-y-3">
-                    <div className="h-4 bg-gray-100 rounded w-full"></div>
-                    <div className="h-4 bg-gray-100 rounded w-5/6"></div>
-                    <div className="h-4 bg-gray-100 rounded w-4/6"></div>
-                </div>
-            </div>
-        ),
-    }
-);
 
 const DashboardCharts = nextDynamic(
     () => import('@/components/DashboardCharts').then((m) => ({ default: m.DashboardCharts })),
@@ -188,26 +171,9 @@ export default async function DashboardPage() {
                         }
                     />
 
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
-                        <div className="absolute right-0 top-0 opacity-10">
-                            <svg className="w-32 h-32 transform translate-x-8 -translate-y-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                        <div className="relative z-10">
-                            <h3 className="text-blue-100 font-medium mb-1">Total Saldo (Keseluruhan)</h3>
-                            <p className="text-3xl font-bold mb-4">{formatCurrency(totalSaldo)}</p>
-                            <div className="text-sm text-blue-200">
-                                Sisa tabungan dari keseluruhan transaksi
-                            </div>
-                        </div>
-                    </div>
+                    <TotalBalanceCard amount={totalSaldo} />
                 </div>
 
-                {/* AI Insight Section — lazy loaded */}
-                <div className="mb-8">
-                    <AiInsightCard />
-                </div>
 
                 {/* Charts Section — lazy loaded */}
                 <DashboardCharts

@@ -23,6 +23,8 @@ Aplikasi web modern untuk **mengelola keuangan pribadi** dengan sistem **trackin
 
 ---
 
+---
+
 ### 🎯 Multi Goals Saving System
 - Membuat banyak target tabungan (multi goals)
 - Perhitungan otomatis kebutuhan per bulan
@@ -30,6 +32,15 @@ Aplikasi web modern untuk **mengelola keuangan pribadi** dengan sistem **trackin
 - **Alokasi dana (manual & otomatis)**
 - **Validasi saldo & target (anti over-allocation)**
 - **Edit & reallocation antar goals**
+
+---
+
+### 👛 Smart Wallet (Budgeting System)
+- Membuat kategori wallet (Makan, Transport, Hiburan, dll.)
+- **Auto-Allocation**: Alokasi otomatis dari pemasukan (persentase atau nominal tetap)
+- **Budget Guard**: Mencegah overspending dengan validasi saldo wallet
+- **Visual Progress**: Monitoring anggaran dengan indikator warna (Hijau/Kuning/Merah)
+- **Monthly Reset**: Manajemen anggaran berbasis bulanan
 
 ---
 

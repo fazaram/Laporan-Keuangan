@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { AuditLogger } from '@/lib/audit/logger';
+import { WalletService } from '@/lib/services/wallet-service';
+import { TransactionType } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
     try {
@@ -78,13 +80,22 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { date, category, amount, type, description } = body;
+        const { date, category, amount, type, description, walletId } = body;
 
         if (!date || !category || !amount || !type) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
             );
+        }
+
+        // Wallet logic: If expense, check budget
+        if (type === TransactionType.EXPENSE && walletId) {
+            try {
+                await WalletService.validateExpense(session.user.id, walletId, Number(amount));
+            } catch (err: any) {
+                return NextResponse.json({ error: err.message }, { status: 400 });
+            }
         }
 
         const transaction = await prisma.transaction.create({
@@ -95,8 +106,16 @@ export async function POST(request: NextRequest) {
                 type,
                 description: description || null,
                 userId: session.user.id,
+                walletId: walletId || null,
             },
         });
+
+        // Wallet logic: If income, allocate to wallets. If expense, record in wallet.
+        if (type === TransactionType.INCOME) {
+            await WalletService.allocateIncome(session.user.id, Number(amount));
+        } else if (type === TransactionType.EXPENSE && walletId) {
+            await WalletService.recordExpense(walletId, Number(amount));
+        }
 
         // Log the creation in audit log
         await AuditLogger.logCreate(

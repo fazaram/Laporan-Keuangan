@@ -128,6 +128,20 @@ export function Navbar() {
                                             </div>
                                         </Link>
 
+                                        {session.user.role === 'ADMIN' && (
+                                            <Link
+                                                href="/admin/dashboard"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                            >
+                                                <span className="text-lg">🛡️</span>
+                                                <div>
+                                                    <p className="font-bold text-emerald-800">Admin Panel</p>
+                                                    <p className="text-[10px] text-emerald-600">Sistem & Monitoring</p>
+                                                </div>
+                                            </Link>
+                                        )}
+
                                         <div className="h-px bg-gray-100 my-1 mx-2"></div>
 
                                         <button

@@ -29,6 +29,10 @@ model User {
   monthlyAnalyses      MonthlyAnalysis[]
   transactions         Transaction[]
   yearlyAnalyses       YearlyAnalysis[]
+  wallets              Wallet[]
+  walletRules          WalletRule[]
+  status               UserStatus        @default(ACTIVE)
+  broadcasts           Broadcast[]
 
   @@map("users")
 }
@@ -44,6 +48,8 @@ model Transaction {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  walletId    String?
+  wallet      Wallet?         @relation(fields: [walletId], references: [id], onDelete: SetNull)
 
   @@index([userId, date])
   @@index([userId, type])
@@ -164,10 +170,68 @@ model ChatHistory {
   @@map("chat_histories")
 }
 
+model Wallet {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  icon         String?
+  budgetAmount Decimal       @default(0) @db.Decimal(15, 2)
+  spentAmount  Decimal       @default(0) @db.Decimal(15, 2)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rules        WalletRule[]
+  transactions Transaction[]
+
+  @@index([userId])
+  @@map("wallets")
+}
+
+model WalletRule {
+  id          String   @id @default(cuid())
+  userId      String
+  walletId    String
+  percentage  Decimal? @db.Decimal(5, 2) // e.g. 10.50 (for 10.5%)
+  fixedAmount Decimal? @db.Decimal(15, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet      Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([walletId])
+  @@map("wallet_rules")
+}
+
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+model Broadcast {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("broadcasts")
+}
+
 enum UserRole {
   VIEWER
   USER
   ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 enum TransactionType {

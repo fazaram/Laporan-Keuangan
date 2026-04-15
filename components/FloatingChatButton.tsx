@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -9,6 +11,8 @@ interface Message {
 }
 
 export function FloatingChatButton() {
+  const { status } = useSession();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -26,6 +30,15 @@ export function FloatingChatButton() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  const shouldHide = useMemo(() => {
+    const isAuthPage = pathname === '/login' || pathname === '/register';
+    return status !== 'authenticated' || isAuthPage;
+  }, [status, pathname]);
+
+  if (shouldHide) {
+    return null;
+  }
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;

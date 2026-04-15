@@ -48,9 +48,9 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             {children}
+            <FloatingChatButton />
           </ToastProvider>
         </AuthProvider>
-        <FloatingChatButton />
         <SpeedInsights />
       </body>
     </html>

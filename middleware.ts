@@ -29,6 +29,5 @@ export const config = {
         '/smart-wallet/:path*',
         '/profile/:path*',
         '/admin/:path*',
-        '/',
     ],
 };

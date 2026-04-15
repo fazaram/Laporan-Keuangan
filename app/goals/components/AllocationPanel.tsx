@@ -55,7 +55,7 @@ export default function AllocationPanel({ availableSurplus, totalNeeded, hasActi
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:sticky md:top-24">
             <h3 className="font-semibold text-lg text-gray-900 mb-6 flex items-center gap-2">
                 <span className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">💼</span> 
                 Alokasi Tabungan

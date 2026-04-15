@@ -133,57 +133,57 @@ export default function LandingPage() {
             </nav>
 
             {/* Hero Section */}
-            <header className="pt-32 pb-20 px-4 text-center">
-                <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest mb-6">Simulation Tool 2.0</div>
-                <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1] mb-6">
+            <header className="pt-24 md:pt-32 pb-12 md:pb-20 px-4 text-center">
+                <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest mb-6">Simulation Tool 2.0</div>
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-[1.1] mb-6">
                     Mulai Hidup Lebih <br />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 italic">Financial-Healthy.</span>
                 </h1>
-                <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
                     Ukur kesehatan finansialmu dalam hitungan detik. Cukup masukkan angka, biarkan AI kami memberikan wawasan mendalam untuk masa depanmu.
                 </p>
             </header>
 
             {/* Simulator Section */}
-            <section className="max-w-6xl mx-auto px-4 pb-32">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <section className="max-w-6xl mx-auto px-4 pb-20 md:pb-32">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
                     
                     {/* Inputs Card */}
-                    <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-slate-200/60 border border-slate-100">
-                        <div className="mb-12">
-                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Pemasukan Utama</label>
+                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-12 shadow-2xl shadow-slate-200/60 border border-slate-100">
+                        <div className="mb-10 md:mb-12">
+                            <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Pemasukan Utama</label>
                             <div className="relative group">
-                                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-bold text-slate-300 transition-colors group-focus-within:text-blue-600">Rp</span>
+                                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xl md:text-2xl font-bold text-slate-300 transition-colors group-focus-within:text-blue-600">Rp</span>
                                 <input 
                                     type="text" 
                                     value={income ? income.toLocaleString('id-ID') : ''}
                                     onChange={(e) => handleInputChange('income', e.target.value)}
                                     placeholder="0" 
-                                    className="w-full bg-slate-50 border-0 rounded-2xl py-6 pl-16 pr-8 text-3xl font-black text-slate-900 focus:ring-4 focus:ring-blue-100 focus:bg-white outline-none transition-all placeholder:text-slate-200"
+                                    className="w-full bg-slate-50 border-0 rounded-2xl py-5 md:py-6 pl-14 md:pl-16 pr-6 md:pr-8 text-2xl md:text-3xl font-black text-slate-900 focus:ring-4 focus:ring-blue-100 focus:bg-white outline-none transition-all placeholder:text-slate-200"
                                 />
-                                <p className="mt-3 text-xs font-bold text-slate-400">Total penghasilan rumah tangga bulanan Anda.</p>
+                                <p className="mt-3 text-[10px] md:text-xs font-bold text-slate-400">Total penghasilan rumah tangga bulanan Anda.</p>
                             </div>
                         </div>
 
-                        <div className="space-y-10">
+                        <div className="space-y-8 md:space-y-10">
                             {Object.entries(CATEGORIES).map(([group, items]) => (
                                 <div key={group}>
-                                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <h3 className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-[0.2em] mb-4 md:mb-6 flex items-center gap-2">
                                         <span className="w-1.5 h-6 bg-slate-200 rounded-full"></span>
                                         {group}
                                     </h3>
-                                    <div className="space-y-5">
+                                    <div className="space-y-4 md:space-y-5">
                                         {items.map((item) => (
-                                            <div key={item.key} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                <label className="text-sm font-semibold text-slate-500">{item.label}</label>
-                                                <div className="relative w-full md:w-64 group">
-                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-300">Rp</span>
+                                            <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                                                <label className="text-xs md:text-sm font-semibold text-slate-500">{item.label}</label>
+                                                <div className="relative w-full sm:w-48 md:w-64 group">
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs md:text-sm font-bold text-slate-300">Rp</span>
                                                     <input 
                                                         type="text" 
                                                         value={expenses[item.key] ? expenses[item.key].toLocaleString('id-ID') : ''}
                                                         onChange={(e) => handleInputChange(item.key, e.target.value)}
                                                         placeholder="0" 
-                                                        className="w-full bg-slate-50 border-0 rounded-xl py-3 pl-12 pr-4 text-sm font-bold text-slate-900 focus:ring-4 focus:ring-slate-100 focus:bg-white outline-none transition-all placeholder:text-slate-200"
+                                                        className="w-full bg-slate-50 border-0 rounded-xl py-2.5 md:py-3 pl-10 md:pl-12 pr-4 text-xs md:text-sm font-bold text-slate-900 focus:ring-4 focus:ring-slate-100 focus:bg-white outline-none transition-all placeholder:text-slate-200"
                                                     />
                                                 </div>
                                             </div>
@@ -195,23 +195,23 @@ export default function LandingPage() {
                     </div>
 
                     {/* Results & AI Insight */}
-                    <div className="lg:sticky lg:top-32 space-y-8">
+                    <div className="lg:sticky lg:top-32 space-y-6 md:space-y-8">
                         {/* Summary Card */}
-                        <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl overflow-hidden relative group">
+                        <div className="bg-slate-900 rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl overflow-hidden relative group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32"></div>
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-10 relative z-10">Ringkasan Simulasi</h3>
+                            <h3 className="text-[10px] md:text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-8 md:mb-10 relative z-10">Ringkasan Simulasi</h3>
                             
-                            <div className="space-y-8 relative z-10">
+                            <div className="space-y-6 md:space-y-8 relative z-10">
                                 <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total Pengeluaran</p>
-                                    <p className="text-4xl font-black">{formatIDR(totalExpense)}</p>
+                                    <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total Pengeluaran</p>
+                                    <p className="text-3xl md:text-4xl font-black">{formatIDR(totalExpense)}</p>
                                 </div>
-                                <div className="pt-8 border-t border-slate-800">
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Potensi Tabungan</p>
-                                    <div className="inline-block px-8 py-4 bg-yellow-400 text-slate-900 rounded-2xl">
-                                        <p className="text-4xl font-black">{formatIDR(savings)}</p>
+                                <div className="pt-6 md:pt-8 border-t border-slate-800">
+                                    <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Potensi Tabungan</p>
+                                    <div className="inline-block px-6 md:px-8 py-3 md:py-4 bg-yellow-400 text-slate-900 rounded-xl md:rounded-2xl">
+                                        <p className="text-3xl md:text-4xl font-black">{formatIDR(savings)}</p>
                                     </div>
-                                    <p className="mt-4 text-xs font-medium text-slate-400 leading-relaxed italic">
+                                    <p className="mt-4 text-[10px] md:text-xs font-medium text-slate-400 leading-relaxed italic">
                                         Area kuning ini adalah dana yang dapat Anda maksimalkan untuk investasi atau dana darurat.
                                     </p>
                                 </div>

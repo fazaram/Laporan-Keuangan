@@ -10,6 +10,7 @@ export function Navbar() {
     const { data: session } = useSession();
     const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const navItems = [
@@ -21,7 +22,7 @@ export function Navbar() {
         { href: '/audit', label: 'Audit Log', icon: '📋', viewerAllowed: true },
     ];
 
-    // Close dropdown when clicking outside
+    // Close dropdown and mobile menu when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -31,6 +32,11 @@ export function Navbar() {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
 
     // Filter menu items based on user role
     const filteredNavItems = navItems.filter(item => {
@@ -45,8 +51,22 @@ export function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex items-center">
-                        <Link href="/dashboard" className="flex items-center gap-3">
-                            <div className="w-10 h-10 overflow-hidden rounded-lg flex items-center justify-center">
+                        {/* Mobile Menu Button */}
+                        <button 
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors mr-2"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {isMobileMenuOpen ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                )}
+                            </svg>
+                        </button>
+
+                        <Link href="/dashboard" className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 overflow-hidden rounded-lg flex items-center justify-center">
                                 <Image
                                     src="/logo.png"
                                     alt="Solvia Finance Logo"
@@ -56,10 +76,11 @@ export function Navbar() {
                                     priority
                                 />
                             </div>
-                            <span className="text-xl font-bold text-gray-900 tracking-tight">Solvia Finance</span>
+                            <span className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight whitespace-nowrap">Solvia Finance</span>
                         </Link>
                     </div>
 
+                    {/* Desktop Navigation */}
                     <div className="hidden lg:flex items-center gap-1">
                         {filteredNavItems.map((item) => (
                             <Link
@@ -76,14 +97,14 @@ export function Navbar() {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4">
                         {session?.user && (
                             <div className="relative" ref={dropdownRef}>
                                 <button
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
+                                    className="flex items-center gap-2 sm:gap-3 p-1 rounded-xl hover:bg-gray-100 transition-all duration-200 group"
                                 >
-                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ring-2 ring-white overflow-hidden">
+                                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-sm ring-2 ring-white overflow-hidden">
                                         {(session.user as any).profileImage ? (
                                             <Image
                                                 src={(session.user as any).profileImage}
@@ -96,9 +117,9 @@ export function Navbar() {
                                             session.user.name?.charAt(0) || 'U'
                                         )}
                                     </div>
-                                    <div className="text-left hidden sm:block">
+                                    <div className="text-left hidden md:block">
                                         <div className="text-sm font-semibold text-gray-900 leading-tight">{session.user.name}</div>
-                                        <div className="text-xs text-gray-500 leading-tight">{session.user.email}</div>
+                                        <div className="text-[10px] text-gray-500 leading-tight">{session.user.email}</div>
                                     </div>
                                     <svg 
                                         className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
@@ -158,6 +179,27 @@ export function Navbar() {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Navigation Drawer */}
+            {isMobileMenuOpen && (
+                <div className="lg:hidden border-t border-gray-100 bg-white animate-in slide-in-from-top duration-300">
+                    <div className="px-4 pt-2 pb-6 space-y-1">
+                        {filteredNavItems.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`flex items-center p-3 rounded-xl font-semibold text-sm transition-all ${pathname.startsWith(item.href)
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                                    : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <span className="text-xl mr-3">{item.icon}</span>
+                                <span>{item.label}</span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
         </nav>
     );
 }

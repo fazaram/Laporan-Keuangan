@@ -91,7 +91,7 @@ export function DashboardCharts({ income, expense, transactions }: ChartsProps) 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
       {/* Bar Chart Card */}
-      <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col h-[400px]">
+      <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col h-[300px] md:h-[400px]">
         <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
           <span className="w-2 h-6 bg-blue-600 rounded-full"></span>
           Perbandingan Arus Kas

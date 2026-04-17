@@ -147,18 +147,18 @@ export default function LandingPage() {
             {/* Simulator Section */}
             <section className="max-w-6xl mx-auto px-4 pb-20 md:pb-32">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
-                    
+
                     {/* Inputs Card */}
                     <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-12 shadow-2xl shadow-slate-200/60 border border-slate-100">
                         <div className="mb-10 md:mb-12">
                             <label className="block text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Pemasukan Utama</label>
                             <div className="relative group">
                                 <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xl md:text-2xl font-bold text-slate-300 transition-colors group-focus-within:text-blue-600">Rp</span>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={income ? income.toLocaleString('id-ID') : ''}
                                     onChange={(e) => handleInputChange('income', e.target.value)}
-                                    placeholder="0" 
+                                    placeholder="0"
                                     className="w-full bg-slate-50 border-0 rounded-2xl py-5 md:py-6 pl-14 md:pl-16 pr-6 md:pr-8 text-2xl md:text-3xl font-black text-slate-900 focus:ring-4 focus:ring-blue-100 focus:bg-white outline-none transition-all placeholder:text-slate-200"
                                 />
                                 <p className="mt-3 text-[10px] md:text-xs font-bold text-slate-400">Total penghasilan rumah tangga bulanan Anda.</p>
@@ -178,11 +178,11 @@ export default function LandingPage() {
                                                 <label className="text-xs md:text-sm font-semibold text-slate-500">{item.label}</label>
                                                 <div className="relative w-full sm:w-48 md:w-64 group">
                                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs md:text-sm font-bold text-slate-300">Rp</span>
-                                                    <input 
-                                                        type="text" 
+                                                    <input
+                                                        type="text"
                                                         value={expenses[item.key] ? expenses[item.key].toLocaleString('id-ID') : ''}
                                                         onChange={(e) => handleInputChange(item.key, e.target.value)}
-                                                        placeholder="0" 
+                                                        placeholder="0"
                                                         className="w-full bg-slate-50 border-0 rounded-xl py-2.5 md:py-3 pl-10 md:pl-12 pr-4 text-xs md:text-sm font-bold text-slate-900 focus:ring-4 focus:ring-slate-100 focus:bg-white outline-none transition-all placeholder:text-slate-200"
                                                     />
                                                 </div>
@@ -200,7 +200,7 @@ export default function LandingPage() {
                         <div className="bg-slate-900 rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-10 text-white shadow-2xl overflow-hidden relative group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 blur-[100px] -mr-32 -mt-32"></div>
                             <h3 className="text-[10px] md:text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-8 md:mb-10 relative z-10">Ringkasan Simulasi</h3>
-                            
+
                             <div className="space-y-6 md:space-y-8 relative z-10">
                                 <div>
                                     <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Total Pengeluaran</p>
@@ -220,7 +220,7 @@ export default function LandingPage() {
 
                         {/* AI Button */}
                         {!insight ? (
-                            <button 
+                            <button
                                 onClick={getAiInsight}
                                 disabled={loading}
                                 className="w-full py-6 bg-blue-600 text-white rounded-[1.5rem] font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 flex items-center justify-center gap-3 disabled:opacity-50 group"
@@ -247,7 +247,7 @@ export default function LandingPage() {
                                             <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100 italic font-black">S</div>
                                             Solvia Intelligence
                                         </h3>
-                                        <button 
+                                        <button
                                             onClick={() => setInsight('')}
                                             className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-blue-600 transition-colors flex items-center gap-1.5"
                                         >
@@ -273,7 +273,7 @@ export default function LandingPage() {
                                         {/* Bottom Fade Gradient */}
                                         <div className="absolute bottom-0 left-0 right-4 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
                                     </div>
-                                    
+
                                     <div className="pt-8 border-t border-slate-50">
                                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Mulai kelola realitas keuanganmu</p>
                                         <Link href="/register" className="block w-full text-center py-5 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all shadow-2xl shadow-slate-200 uppercase tracking-widest">Bergabung Gratis Sekarang</Link>
@@ -287,7 +287,7 @@ export default function LandingPage() {
 
             {/* Footer */}
             <footer className="bg-white border-t border-slate-100 py-12 text-center text-slate-400 italic text-sm">
-                &copy; 2026 Solvia Finance. Dirancang untuk kebebasan finansial Anda.
+                &copy; 2026 PT Solvia Global Solutions. Dirancang untuk kebebasan finansial Anda.
             </footer>
 
             {/* Premium Alert Modal */}
@@ -300,7 +300,7 @@ export default function LandingPage() {
                         <p className="text-slate-500 text-center text-sm leading-relaxed mb-8">
                             {modal.message}
                         </p>
-                        <button 
+                        <button
                             onClick={() => setModal(null)}
                             className="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-sm hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 uppercase tracking-widest"
                         >

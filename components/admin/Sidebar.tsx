@@ -37,7 +37,7 @@ const SidebarItem = ({ href, label, icon, active, subItems }: SidebarItemProps) 
                         className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
                         fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="Refined path: M19 9l-7 7-7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                 )}
             </Link>
@@ -87,8 +87,7 @@ export function Sidebar() {
             ),
             active: pathname.startsWith('/admin/users'),
             subItems: [
-                { href: '/admin/users', label: 'All Users', active: pathname === '/admin/users' },
-                { href: '/admin/users/detail', label: 'User Detail', active: pathname.startsWith('/admin/users/') && pathname !== '/admin/users' }
+                { href: '/admin/users', label: 'All Users', active: pathname === '/admin/users' }
             ]
         },
         {

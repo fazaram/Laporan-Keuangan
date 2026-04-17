@@ -45,11 +45,11 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
     if (!user) return <div className="p-8 text-red-500">User not found</div>;
 
     const statsCards = [
-        { label: 'Total Balance', value: formatCurrency(user.stats.balance), icon: '💰', color: 'bg-emerald-50 text-emerald-600' },
-        { label: 'Transactions', value: user.stats.transactionsCount, icon: '📊', color: 'bg-blue-50 text-blue-600' },
-        { label: 'Active Goals', value: user.stats.goalsCount, icon: '🎯', color: 'bg-purple-50 text-purple-600' },
-        { label: 'Wallets', value: user.stats.walletCount, icon: '👛', color: 'bg-amber-50 text-amber-600' },
-        { label: 'AI Usage', value: user.stats.aiHistoryCount, icon: '🤖', color: 'bg-neutral-900 text-white' },
+        { label: 'Total Balance', value: formatCurrency(user.stats?.balance || 0), icon: '💰', color: 'bg-emerald-50 text-emerald-600' },
+        { label: 'Transactions', value: user.stats?.transactionsCount || 0, icon: '📊', color: 'bg-blue-50 text-blue-600' },
+        { label: 'Active Goals', value: user.stats?.goalsCount || 0, icon: '🎯', color: 'bg-purple-50 text-purple-600' },
+        { label: 'Wallets', value: user.stats?.walletCount || 0, icon: '👛', color: 'bg-amber-50 text-amber-600' },
+        { label: 'AI Usage', value: user.stats?.aiHistoryCount || 0, icon: '🤖', color: 'bg-neutral-900 text-white' },
     ];
 
     return (

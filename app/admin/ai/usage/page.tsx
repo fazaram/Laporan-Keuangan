@@ -11,6 +11,7 @@ interface UsageData {
 export default function AiUsagePage() {
     const [data, setData] = useState<UsageData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [animateBars, setAnimateBars] = useState(false);
 
     useEffect(() => {
         fetchUsage();
@@ -25,6 +26,7 @@ export default function AiUsagePage() {
             console.error('Failed to fetch AI usage:', error);
         } finally {
             setLoading(false);
+            setTimeout(() => setAnimateBars(true), 100);
         }
     };
 
@@ -39,7 +41,7 @@ export default function AiUsagePage() {
                 {/* Daily Usage Chart Placeholder */}
                 <div className="lg:col-span-2 bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm flex flex-col h-[400px]">
                     <h3 className="text-lg font-bold text-neutral-900 mb-6 font-display">Daily Requests (Last 7 Days)</h3>
-                    <div className="flex-1 flex items-end justify-between gap-2">
+                    <div className="flex-1 flex items-stretch justify-between gap-2 pt-4">
                         {loading ? (
                             <div className="w-full flex items-center justify-center animate-pulse text-neutral-300">Loading metrics...</div>
                         ) : (
@@ -47,19 +49,22 @@ export default function AiUsagePage() {
                                 const maxCount = Math.max(...data.dailyUsage.map(d => d.count), 1);
                                 const height = (day.count / maxCount) * 100;
                                 return (
-                                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                                        <div 
-                                            className="w-full bg-emerald-100 rounded-t-lg group-hover:bg-emerald-500 transition-all duration-300 relative"
-                                            style={{ height: `${height}%`, minHeight: '4px' }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {day.count}
+                                    <div key={idx} className="flex-1 flex flex-col justify-end items-center gap-2 group h-full">
+                                            <div 
+                                                className="w-full bg-emerald-100 rounded-t-md group-hover:bg-emerald-500 transition-all duration-1000 ease-out relative"
+                                                style={{ 
+                                                    height: animateBars ? `calc(${height}% - 24px)` : '0%', 
+                                                    minHeight: animateBars ? '4px' : '0px',
+                                                }}
+                                            >
+                                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-900 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {day.count}
+                                                </div>
                                             </div>
+                                            <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter shrink-0">
+                                                {day.date.split('-').slice(1).join('/')}
+                                            </span>
                                         </div>
-                                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
-                                            {day.date.split('-').slice(1).join('/')}
-                                        </span>
-                                    </div>
                                 );
                             })
                         )}

@@ -6,6 +6,8 @@ import { AuditLogger } from '@/lib/audit/logger';
 import { WalletService } from '@/lib/services/wallet-service';
 import { TransactionType } from '@prisma/client';
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);

@@ -176,16 +176,8 @@ export function Sidebar() {
                 ))}
             </nav>
 
-            <div className="mt-auto pt-6 border-t border-neutral-100 overflow-hidden">
-                <Link 
-                    href="/dashboard"
-                    className="flex items-center gap-3 px-4 py-3 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 rounded-xl transition-all"
-                >
-                    <svg className="w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
-                    </svg>
-                    <span className="text-sm font-medium whitespace-nowrap">Return to Site</span>
-                </Link>
+            <div className="mt-auto pt-4 border-t border-neutral-100 overflow-hidden">
+                {/* Return to Site link was removed since admin role is restricted to admin panel */}
             </div>
         </aside>
     );

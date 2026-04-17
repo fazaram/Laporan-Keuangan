@@ -11,6 +11,21 @@ export default withAuth(
             return NextResponse.redirect(new URL('/dashboard', req.url));
         }
 
+        // If it's a regular user page and user is admin, redirect to admin dashboard
+        const pathname = req.nextUrl.pathname;
+        const isUserPage = 
+            pathname.startsWith('/dashboard') || 
+            pathname.startsWith('/transactions') || 
+            pathname.startsWith('/goals') || 
+            pathname.startsWith('/reports') || 
+            pathname.startsWith('/smart-wallet') || 
+            pathname.startsWith('/profile') || 
+            pathname.startsWith('/audit');
+            
+        if (isUserPage && token?.role === 'ADMIN') {
+            return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+        }
+
         return NextResponse.next();
     },
     {

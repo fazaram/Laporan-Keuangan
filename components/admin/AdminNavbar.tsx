@@ -50,15 +50,7 @@ export function AdminNavbar() {
                         </button>
                         
                         <div className="absolute right-0 mt-2 w-48 bg-white border border-neutral-100 rounded-xl shadow-xl shadow-neutral-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-2">
-                            <Link 
-                                href="/profile" 
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                My Profile
-                            </Link>
+                            {/* My Profile link removed since admin role is restricted to admin panel */}
                             <button 
                                 onClick={() => signOut({ callbackUrl: '/login' })}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"

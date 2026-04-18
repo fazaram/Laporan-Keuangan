@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { editAllocation, deleteAllocation, reallocateFunds } from '@/app/actions/allocation';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ToastProvider';
+import { CurrencyInput } from '@/components/CurrencyInput';
 
 export default function GoalDetailClient({ goal, otherGoals, availableSurplus }: { goal: any, otherGoals: any[], availableSurplus: number }) {
     const router = useRouter();
@@ -155,12 +156,10 @@ export default function GoalDetailClient({ goal, otherGoals, availableSurplus }:
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <div className="flex-1">
                                             <div className="relative">
-                                                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
-                                                <input 
-                                                    type="number" 
+                                                <CurrencyInput 
                                                     value={editAmount}
-                                                    onChange={e => setEditAmount(e.target.value)}
-                                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    onValueChange={setEditAmount}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                                     required
                                                 />
                                             </div>
@@ -194,13 +193,10 @@ export default function GoalDetailClient({ goal, otherGoals, availableSurplus }:
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-700 mb-1">Nominal yang ingin dipindah</label>
                                                 <div className="relative">
-                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">Rp</span>
-                                                    <input 
-                                                        type="number" 
+                                                    <CurrencyInput 
                                                         value={transferAmount}
-                                                        onChange={e => setTransferAmount(e.target.value)}
-                                                        max={alloc.amount}
-                                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                                        onValueChange={setTransferAmount}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
                                                         required
                                                     />
                                                 </div>

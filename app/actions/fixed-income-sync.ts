@@ -2,6 +2,8 @@
 
 import { prisma } from '@/lib/db';
 import { TransactionType } from '@prisma/client';
+import { WalletService } from '@/lib/services/wallet-service';
+import { GoalService } from '@/lib/services/goal-service';
 
 export async function syncFixedIncomeTransactions(userId: string) {
     try {
@@ -66,6 +68,11 @@ export async function syncFixedIncomeTransactions(userId: string) {
                         date: transactionDate,
                     },
                 });
+
+                // Auto allocate to wallets and goals (Synchronize)
+                await WalletService.allocateIncome(userId, fixedAmount);
+                await GoalService.allocateAutomatically(userId, fixedAmount);
+                
                 createdCount++;
             }
 

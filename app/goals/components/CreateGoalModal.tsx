@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { createGoal } from '@/app/actions/goal';
 import { useToast } from '@/components/ToastProvider';
+import { CurrencyInput } from '@/components/CurrencyInput';
 
 export default function CreateGoalModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [targetAmount, setTargetAmount] = useState('');
     const { showToast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -54,7 +56,14 @@ export default function CreateGoalModal() {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Target Nominal (Rp)</label>
-                                            <input required name="targetAmount" type="number" min="0" placeholder="5000000" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                                            <input type="hidden" name="targetAmount" value={targetAmount} />
+                                            <CurrencyInput 
+                                                required 
+                                                value={targetAmount} 
+                                                onValueChange={setTargetAmount}
+                                                placeholder="Rp 5.000.000" 
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" 
+                                            />
                                         </div>
 
                                         <div>

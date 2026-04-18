@@ -4,7 +4,7 @@ export function formatCurrency(amount: number | string): string {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
     }).format(num);
 }
 
@@ -15,6 +15,24 @@ export function formatDate(date: Date | string): string {
         month: 'long',
         day: 'numeric',
     }).format(d);
+}
+
+export function formatDateTime(date: Date | string): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
+export function getLocalDatetime(date?: Date | string): string {
+    const d = date ? (typeof date === 'string' ? new Date(date) : date) : new Date();
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 19);
 }
 
 export function formatDateShort(date: Date | string): string {

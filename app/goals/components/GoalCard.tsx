@@ -5,6 +5,8 @@ import { deleteGoal, updateGoal } from '@/app/actions/goal';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/components/ToastProvider';
+import { CurrencyInput } from '@/components/CurrencyInput';
+import { formatCurrency } from '@/lib/utils';
 
 interface GoalCardProps {
     goal: {
@@ -32,8 +34,7 @@ export default function GoalCard({ goal }: GoalCardProps) {
     const [editPriority, setEditPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>(goal.priority);
     const [editDuration, setEditDuration] = useState(goal.durationMonths.toString());
 
-    const formatCurrency = (amount: number) =>
-        new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
 
     const progress = Math.min(100, Math.round((goal.currentAmount / goal.targetAmount) * 100));
     const now = new Date();
@@ -220,14 +221,11 @@ export default function GoalCard({ goal }: GoalCardProps) {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Target Nominal</label>
                                 <div className="relative">
-                                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500 font-medium">Rp</span>
-                                    <input
-                                        type="number"
+                                    <CurrencyInput
                                         value={editTarget}
-                                        onChange={e => setEditTarget(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="0"
-                                        min={1}
+                                        onValueChange={setEditTarget}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Rp 0"
                                         required
                                     />
                                 </div>

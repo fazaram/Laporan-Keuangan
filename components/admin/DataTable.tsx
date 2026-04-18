@@ -6,6 +6,7 @@ interface Column<T> {
     header: string;
     accessor: keyof T | ((item: T) => React.ReactNode);
     className?: string;
+    sortKey?: keyof T;
 }
 
 interface DataTableProps<T> {
@@ -13,13 +14,19 @@ interface DataTableProps<T> {
     columns: Column<T>[];
     loading?: boolean;
     emptyMessage?: string;
+    onSort?: (key: keyof T) => void;
+    sortKey?: keyof T;
+    sortDirection?: 'asc' | 'desc';
 }
 
 export function DataTable<T extends { id: string | number }>({ 
     data, 
     columns, 
     loading, 
-    emptyMessage = 'No data available' 
+    emptyMessage = 'No data available',
+    onSort,
+    sortKey,
+    sortDirection
 }: DataTableProps<T>) {
     if (loading) {
         return (
@@ -42,7 +49,7 @@ export function DataTable<T extends { id: string | number }>({
 
     if (data.length === 0) {
         return (
-            <div className="w-full bg-white rounded-2xl border border-neutral-100 p-12 text-center">
+            <div className="w-full bg-white rounded-2xl border border-neutral-100 p-12 text-center shadow-sm">
                 <div className="w-16 h-16 bg-neutral-50 rounded-full flex items-center justify-center mx-auto mb-4 text-neutral-400">
                     <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-3.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -62,9 +69,31 @@ export function DataTable<T extends { id: string | number }>({
                             {columns.map((col, idx) => (
                                 <th 
                                     key={idx} 
-                                    className={`px-6 py-4 text-xs font-bold text-neutral-500 uppercase tracking-wider ${col.className || ''}`}
+                                    className={`px-6 py-4 text-xs font-bold text-neutral-500 uppercase tracking-wider ${col.sortKey ? 'cursor-pointer hover:bg-neutral-100 transition-colors' : ''} ${col.className || ''}`}
+                                    onClick={() => col.sortKey && onSort?.(col.sortKey)}
                                 >
-                                    {col.header}
+                                    <div className="flex items-center gap-1">
+                                        {col.header}
+                                        {col.sortKey && (
+                                            <div className="flex flex-col">
+                                                {sortKey === col.sortKey ? (
+                                                    sortDirection === 'asc' ? (
+                                                        <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    )
+                                                ) : (
+                                                    <svg className="w-3 h-3 text-neutral-300 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </th>
                             ))}
                         </tr>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { manualAllocate } from '@/app/actions/allocation';
 import { useRouter } from 'next/navigation';
+import { CurrencyInput } from '@/components/CurrencyInput';
 
 export default function ManualAllocationModal({ 
     availableSurplus, 
@@ -115,13 +116,11 @@ export default function ManualAllocationModal({
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nominal Alokasi</label>
                                 <div className="relative">
-                                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500 font-medium">Rp</span>
-                                    <input 
-                                        type="number"
+                                    <CurrencyInput 
                                         value={amount}
-                                        onChange={e => setAmount(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="0"
+                                        onValueChange={setAmount}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Rp 0"
                                         required
                                     />
                                 </div>

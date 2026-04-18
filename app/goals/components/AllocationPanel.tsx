@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { allocateFunds } from '@/app/actions/goal';
+import { allocateFunds, syncGoalsAction } from '@/app/actions/goal';
+import { CurrencyInput } from '@/components/CurrencyInput';
+import { formatCurrency } from '@/lib/utils';
 
 interface AllocationPanelProps {
     availableSurplus: number;
@@ -10,19 +12,21 @@ interface AllocationPanelProps {
 }
 
 export default function AllocationPanel({ availableSurplus, totalNeeded, hasActiveGoals }: AllocationPanelProps) {
-    const [allocateAmount, setAllocateAmount] = useState<number>(availableSurplus);
+    const [useMaxSurplus, setUseMaxSurplus] = useState(false);
+    const [allocateAmount, setAllocateAmount] = useState<number>(totalNeeded);
     const [isLoading, setIsLoading] = useState(false);
     
     // Custom Modal/Popup State
     const [confirmModal, setConfirmModal] = useState(false);
     const [feedback, setFeedback] = useState<{message: string, type: 'error'|'success' | null}>({message: '', type: null});
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(amount);
+    const handleMaxSurplusToggle = (checked: boolean) => {
+        setUseMaxSurplus(checked);
+        if (checked) {
+            setAllocateAmount(availableSurplus);
+        } else {
+            setAllocateAmount(totalNeeded);
+        }
     };
 
     const handleAllocateClick = () => {
@@ -50,40 +54,93 @@ export default function AllocationPanel({ availableSurplus, totalNeeded, hasActi
         if (res.success) {
             setFeedback({ message: 'Alokasi otomatis berhasil ditambahkan!', type: 'success' });
         } else {
-            setFeedback({ message: res.error || 'Gagal mengalokasikan', type: 'error' });
+            setFeedback({ message: (res as any).error || 'Gagal mengalokasikan', type: 'error' });
+        }
+    };
+
+    const handleSyncClick = async () => {
+        setIsLoading(true);
+        const res = await syncGoalsAction();
+        setIsLoading(false);
+
+        if (res.success) {
+            setFeedback({ message: `Sinkronisasi berhasil! ${(res as any).syncedCount} goal diperbarui.`, type: 'success' });
+        } else {
+            setFeedback({ message: (res as any).error || 'Gagal sinkronisasi', type: 'error' });
         }
     };
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:sticky md:top-24">
-            <h3 className="font-semibold text-lg text-gray-900 mb-6 flex items-center gap-2">
-                <span className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">💼</span> 
-                Alokasi Tabungan
-            </h3>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="font-semibold text-lg text-gray-900 flex items-center gap-2">
+                    <span className="p-1.5 bg-blue-100 text-blue-600 rounded-lg">💼</span> 
+                    Alokasi Tabungan
+                </h3>
+                <button 
+                    onClick={handleSyncClick}
+                    disabled={isLoading}
+                    title="Sinkronkan Data"
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                >
+                    <svg className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+            </div>
 
             <div className="space-y-5">
                 <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                    <p className="text-sm text-gray-500 mb-1">Sisa Uang Bulan Ini</p>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(availableSurplus)}</p>
-                    <p className="text-xs text-gray-400 mt-2">Berdasarkan Total Pemasukan - Pengeluaran bulan berjalan</p>
-                </div>
-
-                <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Total Kebutuhan Tabungan</span>
-                    <span className="font-medium text-gray-900">{formatCurrency(totalNeeded)}</span>
+                    <div className="flex justify-between items-start mb-1">
+                        <p className="text-sm text-gray-500">Sisa Uang Bulan Ini</p>
+                        <div className="flex items-center gap-2 cursor-pointer group" onClick={() => handleMaxSurplusToggle(!useMaxSurplus)}>
+                            <input 
+                                type="checkbox" 
+                                checked={useMaxSurplus}
+                                onChange={(e) => handleMaxSurplusToggle(e.target.checked)}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <span className="text-[10px] font-bold text-gray-600 group-hover:text-blue-600 transition-colors">Pakai Semua</span>
+                        </div>
+                    </div>
+                    <p className={`text-2xl font-bold transition-colors ${useMaxSurplus ? 'text-blue-600' : 'text-gray-900'}`}>
+                        {formatCurrency(availableSurplus)}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-2">Berdasarkan Total Pemasukan - Pengeluaran bulan berjalan</p>
                 </div>
 
                 <hr className="border-gray-100" />
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Simulasikan Alokasi Manual (Rp)</label>
-                    <input 
-                        type="number" 
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Total Alokasi Tabungan</label>
+                        {!useMaxSurplus && allocateAmount !== totalNeeded && (
+                            <button 
+                                onClick={() => setAllocateAmount(totalNeeded)}
+                                className="text-[10px] text-blue-600 hover:underline font-medium"
+                            >
+                                Reset ke Kebutuhan
+                            </button>
+                        )}
+                        {useMaxSurplus && (
+                            <span className="text-[10px] text-blue-600 font-bold animate-pulse">Mode Maksimal ✨</span>
+                        )}
+                    </div>
+                    <CurrencyInput 
                         value={allocateAmount}
-                        onChange={(e) => setAllocateAmount(Number(e.target.value))}
-                        max={availableSurplus > 0 ? availableSurplus : undefined}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        onValueChange={(val) => !useMaxSurplus && setAllocateAmount(Number(val))}
+                        disabled={useMaxSurplus}
+                        className={`w-full px-4 py-2.5 border rounded-lg outline-none font-bold transition-all ${
+                            useMaxSurplus 
+                            ? 'bg-blue-50 border-blue-200 text-blue-600 cursor-not-allowed' 
+                            : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-blue-600'
+                        }`}
                     />
+                    <p className="text-[10px] text-gray-400 mt-1 italic">
+                        {useMaxSurplus 
+                         ? '*Seluruh sisa uang akan dihabiskan untuk mempercepat tabungan Anda.'
+                         : '*Nilai ini akan dibagikan secara otomatis ke seluruh target tabungan Anda.'}
+                    </p>
                 </div>
 
                 <button 
@@ -91,7 +148,7 @@ export default function AllocationPanel({ availableSurplus, totalNeeded, hasActi
                     disabled={isLoading || !hasActiveGoals || allocateAmount <= 0}
                     className="w-full bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                 >
-                    {isLoading ? 'Mengalokasikan...' : 'Alokasikan Otomatis Sekarang'}
+                    {isLoading ? 'Mengalokasikan...' : 'Alokasikan Sekarang'}
                 </button>
 
                 {availableSurplus > totalNeeded && totalNeeded > 0 && (

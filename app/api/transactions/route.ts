@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { AuditLogger } from '@/lib/audit/logger';
 import { WalletService } from '@/lib/services/wallet-service';
 import { TransactionType } from '@prisma/client';
+import { GoalService } from '@/lib/services/goal-service';
 
 export const dynamic = "force-dynamic";
 
@@ -115,6 +116,8 @@ export async function POST(request: NextRequest) {
         // Wallet logic: If income, allocate to wallets. If expense, record in wallet.
         if (type === TransactionType.INCOME) {
             await WalletService.allocateIncome(session.user.id, Number(amount));
+            // Goal logic: Also allocate surplus to goals automatically (Sync)
+            await GoalService.allocateAutomatically(session.user.id, Number(amount));
         } else if (type === TransactionType.EXPENSE && walletId) {
             await WalletService.recordExpense(walletId, Number(amount));
         }
@@ -144,6 +147,89 @@ export async function POST(request: NextRequest) {
         console.error('Error creating transaction:', error);
         return NextResponse.json(
             { error: 'Failed to create transaction' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(request: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session || !session.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        if (session.user.role === 'VIEWER') {
+            return NextResponse.json(
+                { error: 'Forbidden: Viewers cannot delete transactions' },
+                { status: 403 }
+            );
+        }
+
+        const body = await request.json();
+        const { ids } = body;
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return NextResponse.json(
+                { error: 'Missing or invalid transaction IDs' },
+                { status: 400 }
+            );
+        }
+
+        // Validate that all transactions belong to the user (unless admin, but for now enforce userId)
+        const transactionsToDelete = await prisma.transaction.findMany({
+            where: {
+                id: { in: ids },
+                userId: session.user.id,
+            },
+        });
+
+        if (transactionsToDelete.length === 0) {
+            return NextResponse.json(
+                { error: 'No matching transactions found or unauthorized' },
+                { status: 404 }
+            );
+        }
+
+        const validIds = transactionsToDelete.map(t => t.id);
+
+        await prisma.transaction.deleteMany({
+            where: {
+                id: { in: validIds },
+            },
+        });
+
+        // Audit log for multiple deletions
+        for (const transaction of transactionsToDelete) {
+            try {
+                await AuditLogger.logDelete(
+                    session.user.id,
+                    'Transaction',
+                    transaction.id,
+                    {
+                        date: transaction.date,
+                        category: transaction.category,
+                        amount: Number(transaction.amount),
+                        type: transaction.type,
+                        description: transaction.description,
+                    },
+                    request
+                );
+            } catch (err) {
+                console.error('Audit log error on bulk delete:', err);
+            }
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: `Successfully deleted ${validIds.length} transactions`,
+            deletedCount: validIds.length
+        });
+    } catch (error) {
+        console.error('Error in bulk deleting transactions:', error);
+        return NextResponse.json(
+            { error: 'Failed to delete transactions' },
             { status: 500 }
         );
     }

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDateTime, getLocalDatetime } from '@/lib/utils';
+import { CurrencyInput } from '@/components/CurrencyInput';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,9 +25,16 @@ export default function TransactionsPage() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [typeFilter, setTypeFilter] = useState('');
+    const [sortConfig, setSortConfig] = useState<{
+        key: keyof Transaction;
+        direction: 'asc' | 'desc';
+    }>({ key: 'date', direction: 'desc' });
 
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: getLocalDatetime(),
         category: '',
         amount: '',
         type: 'INCOME' as 'INCOME' | 'EXPENSE',
@@ -69,7 +77,7 @@ export default function TransactionsPage() {
                 setShowForm(false);
                 setEditingId(null);
                 setFormData({
-                    date: new Date().toISOString().split('T')[0],
+                    date: getLocalDatetime(),
                     category: '',
                     amount: '',
                     type: 'INCOME',
@@ -84,7 +92,7 @@ export default function TransactionsPage() {
 
     const handleEdit = (tx: Transaction) => {
         setFormData({
-            date: new Date(tx.date).toISOString().split('T')[0],
+            date: getLocalDatetime(tx.date),
             category: tx.category,
             amount: tx.amount.toString(),
             type: tx.type,
@@ -110,6 +118,33 @@ export default function TransactionsPage() {
         }
     };
 
+    const handleSort = (key: keyof Transaction) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortIcon = (key: keyof Transaction) => {
+        if (sortConfig.key !== key) {
+            return (
+                <svg className="w-3 h-3 ml-1 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+            );
+        }
+        return sortConfig.direction === 'asc' ? (
+            <svg className="w-3 h-3 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+        ) : (
+            <svg className="w-3 h-3 ml-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
@@ -121,22 +156,35 @@ export default function TransactionsPage() {
                         <p className="text-sm sm:text-base text-gray-600">Kelola pemasukan dan pengeluaran Anda</p>
                     </div>
                     {session?.user?.role !== 'VIEWER' && (
-                        <button
-                            onClick={() => {
-                                setShowForm(!showForm);
-                                setEditingId(null);
-                                setFormData({
-                                    date: new Date().toISOString().split('T')[0],
-                                    category: '',
-                                    amount: '',
-                                    type: 'INCOME',
-                                    description: '',
-                                });
-                            }}
-                            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
-                        >
-                            {showForm ? 'Tutup Form' : '+ Tambah Transaksi'}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                            {selectedIds.length > 0 && (
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition-all text-sm sm:text-base flex items-center justify-center gap-2"
+                                >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Hapus {selectedIds.length}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => {
+                                    setShowForm(!showForm);
+                                    setEditingId(null);
+                                    setFormData({
+                                        date: getLocalDatetime(),
+                                        category: '',
+                                        amount: '',
+                                        type: 'INCOME',
+                                        description: '',
+                                    });
+                                }}
+                                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
+                            >
+                                {showForm ? 'Tutup Form' : '+ Tambah Transaksi'}
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -150,10 +198,11 @@ export default function TransactionsPage() {
                         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal
+                                    Tanggal & Waktu
                                 </label>
                                 <input
-                                    type="date"
+                                    type="datetime-local"
+                                    step="1"
                                     value={formData.date}
                                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                                     required
@@ -179,14 +228,11 @@ export default function TransactionsPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Nominal
                                 </label>
-                                <input
-                                    type="number"
+                                <CurrencyInput
                                     value={formData.amount}
-                                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                    onValueChange={(val) => setFormData({ ...formData, amount: val })}
                                     required
-                                    min="0"
-                                    step="1000"
-                                    placeholder="0"
+                                    placeholder="Rp 0"
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
@@ -242,8 +288,33 @@ export default function TransactionsPage() {
 
                 {/* Transaction List */}
                 <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-200">
+                    <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
                         <h2 className="text-xl font-bold text-gray-900">Daftar Transaksi</h2>
+                        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </span>
+                                <input 
+                                    type="text"
+                                    placeholder="Cari kategori atau deskripsi..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full sm:w-64 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                />
+                            </div>
+                            <select 
+                                value={typeFilter}
+                                onChange={(e) => setTypeFilter(e.target.value)}
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                            >
+                                <option value="">Semua Tipe</option>
+                                <option value="INCOME">Pemasukan</option>
+                                <option value="EXPENSE">Pengeluaran</option>
+                            </select>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -255,19 +326,99 @@ export default function TransactionsPage() {
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nominal</th>
+                                        {session?.user?.role !== 'VIEWER' && (
+                                            <th className="px-6 py-3 text-left w-12">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                    checked={transactions.length > 0 && selectedIds.length === transactions.length}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedIds(transactions.map(t => t.id));
+                                                        } else {
+                                                            setSelectedIds([]);
+                                                        }
+                                                    }}
+                                                />
+                                            </th>
+                                        )}
+                                        <th 
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                                            onClick={() => handleSort('date')}
+                                        >
+                                            <div className="flex items-center">
+                                                Tanggal {getSortIcon('date')}
+                                            </div>
+                                        </th>
+                                        <th 
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                                            onClick={() => handleSort('category')}
+                                        >
+                                            <div className="flex items-center">
+                                                Kategori {getSortIcon('category')}
+                                            </div>
+                                        </th>
+                                        <th 
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                                            onClick={() => handleSort('type')}
+                                        >
+                                            <div className="flex items-center">
+                                                Tipe {getSortIcon('type')}
+                                            </div>
+                                        </th>
+                                        <th 
+                                            className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                                            onClick={() => handleSort('amount')}
+                                        >
+                                            <div className="flex items-center justify-end">
+                                                Nominal {getSortIcon('amount')}
+                                            </div>
+                                        </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
                                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {transactions.map((tx) => (
+                                    {transactions
+                                        .filter(tx => {
+                                            const matchesSearch = !searchQuery || 
+                                                tx.category.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                                (tx.description && tx.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                                            const matchesType = !typeFilter || tx.type === typeFilter;
+                                            return matchesSearch && matchesType;
+                                        })
+                                        .sort((a, b) => {
+                                            const aValue = a[sortConfig.key];
+                                            const bValue = b[sortConfig.key];
+                                            
+                                            if (aValue === bValue) return 0;
+                                            
+                                            if (sortConfig.direction === 'asc') {
+                                                return aValue! < bValue! ? -1 : 1;
+                                            } else {
+                                                return aValue! > bValue! ? -1 : 1;
+                                            }
+                                        })
+                                        .map((tx) => (
                                         <tr key={tx.id} className="hover:bg-gray-50">
+                                            {session?.user?.role !== 'VIEWER' && (
+                                                <td className="px-6 py-4 whitespace-nowrap w-12">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                        checked={selectedIds.includes(tx.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setSelectedIds([...selectedIds, tx.id]);
+                                                            } else {
+                                                                setSelectedIds(selectedIds.filter(id => id !== tx.id));
+                                                            }
+                                                        }}
+                                                    />
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {formatDate(tx.date)}
+                                                {formatDateTime(tx.date)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {tx.category}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { WalletCard } from '@/components/WalletCard';
 import { formatCurrency } from '@/lib/utils';
+import { CurrencyInput } from '@/components/CurrencyInput';
 import { useToast } from '@/components/ToastProvider';
 
 export default function SmartWalletPage() {
@@ -230,12 +231,11 @@ export default function SmartWalletPage() {
 
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Nominal Tetap (Rp)</label>
-                                <input 
-                                    type="number" 
+                                <CurrencyInput 
                                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="0"
+                                    placeholder="Rp 0"
                                     value={newRule.fixedAmount}
-                                    onChange={(e) => setNewRule({...newRule, fixedAmount: e.target.value, percentage: ''})}
+                                    onValueChange={(val) => setNewRule({...newRule, fixedAmount: val, percentage: ''})}
                                 />
                                 <p className="text-[10px] text-gray-400 mt-1">Setiap ada pemasukan, wallet akan diisi nominal ini.</p>
                             </div>

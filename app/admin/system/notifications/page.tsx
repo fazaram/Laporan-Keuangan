@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
-import { formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 
 interface Broadcast {
     id: string;
@@ -16,6 +16,11 @@ export default function NotificationsPage() {
     const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortConfig, setSortConfig] = useState<{
+        key: keyof Broadcast;
+        direction: 'asc' | 'desc';
+    }>({ key: 'createdAt', direction: 'desc' });
     
     // Form state
     const [title, setTitle] = useState('');
@@ -61,9 +66,18 @@ export default function NotificationsPage() {
         }
     };
 
+    const handleSort = (key: keyof Broadcast) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     const columns = [
         {
             header: 'Title',
+            sortKey: 'title' as keyof Broadcast,
             accessor: (b: Broadcast) => (
                 <div className="max-w-xs">
                     <p className="font-bold text-neutral-900 truncate">{b.title}</p>
@@ -73,6 +87,7 @@ export default function NotificationsPage() {
         },
         {
             header: 'Message',
+            sortKey: 'message' as keyof Broadcast,
             className: 'max-w-sm',
             accessor: (b: Broadcast) => (
                 <p className="text-xs text-neutral-500 line-clamp-2">{b.message}</p>
@@ -86,9 +101,29 @@ export default function NotificationsPage() {
         },
         {
             header: 'Date',
-            accessor: (b: Broadcast) => formatDate(b.createdAt),
+            sortKey: 'createdAt' as keyof Broadcast,
+            accessor: (b: Broadcast) => formatDateTime(b.createdAt),
         },
     ];
+
+    const filteredBroadcasts = broadcasts
+        .filter(b => {
+            return !searchQuery || 
+                b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                b.message.toLowerCase().includes(searchQuery.toLowerCase());
+        })
+        .sort((a, b) => {
+            const aValue = a[sortConfig.key] || '';
+            const bValue = b[sortConfig.key] || '';
+            
+            if (aValue === bValue) return 0;
+            
+            if (sortConfig.direction === 'asc') {
+                return aValue < bValue ? -1 : 1;
+            } else {
+                return aValue > bValue ? -1 : 1;
+            }
+        });
 
     return (
         <div className="space-y-12">
@@ -152,20 +187,35 @@ export default function NotificationsPage() {
                 </div>
 
                 {/* History Section */}
-                <div className="xl:col-span-3 space-y-6">
+                <div className="xl:col-span-3 space-y-4">
                     <div className="flex items-center justify-between">
-                         <h3 className="text-lg font-bold text-neutral-900 font-display">Broadcast History</h3>
-                         <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">{broadcasts.length} Sent</span>
+                         <div className="flex items-center gap-3">
+                             <h3 className="text-lg font-bold text-neutral-900 font-display">Broadcast History</h3>
+                             <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest bg-neutral-100 px-2 py-1 rounded">{broadcasts.length} Sent</span>
+                         </div>
+                         <div className="relative max-w-xs w-full">
+                             <input 
+                                 type="text"
+                                 placeholder="Search titles or messages..."
+                                 value={searchQuery}
+                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                 className="w-full bg-white border border-neutral-200 rounded-xl py-2 px-4 text-xs focus:ring-2 focus:ring-emerald-500/10 outline-none transition-all shadow-sm"
+                             />
+                         </div>
                     </div>
                     
                     <DataTable 
-                        data={broadcasts} 
+                        data={filteredBroadcasts} 
                         columns={columns} 
                         loading={loading}
                         emptyMessage="No announcements have been broadcasted yet."
+                        onSort={handleSort}
+                        sortKey={sortConfig.key}
+                        sortDirection={sortConfig.direction}
                     />
                 </div>
             </div>
         </div>
     );
 }
+

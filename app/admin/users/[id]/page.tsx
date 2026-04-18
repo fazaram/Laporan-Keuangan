@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
 
 interface UserDetail {
@@ -115,7 +115,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Registration Date</p>
-                                <p className="text-sm font-medium text-neutral-600">{formatDate(user.createdAt)}</p>
+                                <p className="text-sm font-medium text-neutral-600">{formatDateTime(user.createdAt)}</p>
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Bio/Description</p>
@@ -155,3 +155,4 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+

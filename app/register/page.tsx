@@ -17,7 +17,7 @@ export default function RegisterPage() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setErrors({});
-        
+
         const newErrors: typeof errors = {};
         if (!name) newErrors.name = 'Nama lengkap wajib diisi';
         if (!email) newErrors.email = 'Email wajib diisi';
@@ -26,7 +26,7 @@ export default function RegisterPage() {
         } else if (password.length < 6) {
             newErrors.password = 'Password minimal 6 karakter';
         }
-        
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
@@ -61,8 +61,8 @@ export default function RegisterPage() {
         <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 pt-12 md:pt-24">
             {/* Back Button */}
             <div className="w-full max-w-md mb-6">
-                <Link 
-                    href="/" 
+                <Link
+                    href="/"
                     className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors group"
                 >
                     <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:bg-blue-50 transition-colors border border-slate-100">
@@ -106,10 +106,9 @@ export default function RegisterPage() {
                                     setName(e.target.value);
                                     if (errors.name) setErrors({ ...errors, name: '' });
                                 }}
-                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${
-                                    errors.name ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
-                                } focus:ring-2 focus:border-transparent`}
-                                placeholder="Joko Widodo"
+                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${errors.name ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
+                                    } focus:ring-2 focus:border-transparent`}
+                                placeholder="Username"
                                 disabled={loading}
                             />
                             {errors.name && (
@@ -134,9 +133,8 @@ export default function RegisterPage() {
                                     setEmail(e.target.value);
                                     if (errors.email) setErrors({ ...errors, email: '' });
                                 }}
-                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${
-                                    errors.email ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
-                                } focus:ring-2 focus:border-transparent`}
+                                className={`w-full px-4 py-3 border rounded-lg transition-all outline-none ${errors.email ? 'border-red-500 focus:ring-red-500/20' : 'border-gray-300 focus:ring-blue-500'
+                                    } focus:ring-2 focus:border-transparent`}
                                 placeholder="email@example.com"
                                 disabled={loading}
                             />

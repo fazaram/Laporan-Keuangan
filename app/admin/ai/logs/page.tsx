@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
-import { formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 
 interface AiLog {
     id: string;
@@ -19,6 +19,11 @@ interface AiLog {
 export default function AiLogsPage() {
     const [logs, setLogs] = useState<AiLog[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortConfig, setSortConfig] = useState<{
+        key: keyof AiLog | 'userName';
+        direction: 'asc' | 'desc';
+    }>({ key: 'createdAt', direction: 'desc' });
 
     useEffect(() => {
         fetchLogs();
@@ -36,9 +41,18 @@ export default function AiLogsPage() {
         }
     };
 
+    const handleSort = (key: any) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     const columns = [
         {
             header: 'User',
+            sortKey: 'userName' as any,
             accessor: (log: AiLog) => (
                 <div>
                     <p className="font-semibold text-neutral-900 leading-none">{log.user.name || 'N/A'}</p>
@@ -48,6 +62,7 @@ export default function AiLogsPage() {
         },
         {
             header: 'Role',
+            sortKey: 'role' as any,
             accessor: (log: AiLog) => (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${
                     log.role === 'user' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
@@ -58,6 +73,7 @@ export default function AiLogsPage() {
         },
         {
             header: 'Content',
+            sortKey: 'content' as any,
             className: 'max-w-md',
             accessor: (log: AiLog) => (
                 <div className="truncate text-xs text-neutral-500" title={log.content}>
@@ -67,9 +83,38 @@ export default function AiLogsPage() {
         },
         {
             header: 'Timestamp',
-            accessor: (log: AiLog) => formatDate(log.createdAt),
+            sortKey: 'createdAt' as any,
+            accessor: (log: AiLog) => formatDateTime(log.createdAt),
         },
     ];
+
+    const filteredLogs = logs
+        .filter(log => {
+            return !searchQuery || 
+                (log.user.name && log.user.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                log.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                log.content.toLowerCase().includes(searchQuery.toLowerCase());
+        })
+        .sort((a, b) => {
+            let aValue: any;
+            let bValue: any;
+            
+            if (sortConfig.key === 'userName') {
+                aValue = a.user.name || a.user.email;
+                bValue = b.user.name || b.user.email;
+            } else {
+                aValue = a[sortConfig.key as keyof AiLog];
+                bValue = b[sortConfig.key as keyof AiLog];
+            }
+            
+            if (aValue === bValue) return 0;
+            
+            if (sortConfig.direction === 'asc') {
+                return aValue < bValue ? -1 : 1;
+            } else {
+                return aValue > bValue ? -1 : 1;
+            }
+        });
 
     return (
         <div className="space-y-8">
@@ -88,19 +133,25 @@ export default function AiLogsPage() {
                         </span>
                         <input 
                             type="text" 
-                            placeholder="Search logs..." 
+                            placeholder="Search logs by name, email, or content..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-neutral-50 border-neutral-200 rounded-xl py-2 pl-9 pr-4 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
                         />
                     </div>
                 </div>
 
                 <DataTable 
-                    data={logs} 
+                    data={filteredLogs} 
                     columns={columns} 
                     loading={loading}
                     emptyMessage="No AI logs found in the system."
+                    onSort={handleSort}
+                    sortKey={sortConfig.key as any}
+                    sortDirection={sortConfig.direction}
                 />
             </div>
         </div>
     );
 }
+

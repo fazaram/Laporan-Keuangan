@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
-import { formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 
 interface AuditLog {
     id: string;
@@ -26,6 +26,10 @@ export default function AuditLogsPage() {
         limit: 50,
         offset: 0
     });
+    const [sortConfig, setSortConfig] = useState<{
+        key: keyof AuditLog | 'adminName';
+        direction: 'asc' | 'desc';
+    }>({ key: 'createdAt', direction: 'desc' });
 
     useEffect(() => {
         fetchLogs();
@@ -50,11 +54,18 @@ export default function AuditLogsPage() {
         } finally {
             setLoading(false);
         }
+    const handleSort = (key: any) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
     };
 
     const columns = [
         {
             header: 'Admin',
+            sortKey: 'adminName' as any,
             accessor: (log: AuditLog) => (
                 <div>
                     <p className="font-semibold text-neutral-900 leading-none">{log.user.name || 'Admin'}</p>
@@ -64,6 +75,7 @@ export default function AuditLogsPage() {
         },
         {
             header: 'Action',
+            sortKey: 'action' as any,
             accessor: (log: AuditLog) => (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${
                     log.action === 'CREATE' ? 'bg-emerald-50 text-emerald-600' : 
@@ -75,6 +87,7 @@ export default function AuditLogsPage() {
         },
         {
             header: 'Resource',
+            sortKey: 'entityType' as any,
             accessor: (log: AuditLog) => (
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-neutral-900">{log.entityType}</span>
@@ -84,7 +97,8 @@ export default function AuditLogsPage() {
         },
         {
             header: 'Timestamp',
-            accessor: (log: AuditLog) => formatDate(log.createdAt),
+            sortKey: 'createdAt' as any,
+            accessor: (log: AuditLog) => formatDateTime(log.createdAt),
         },
         {
             header: 'Details',
@@ -137,12 +151,35 @@ export default function AuditLogsPage() {
                 </div>
 
                 <DataTable 
-                    data={logs} 
+                    data={[...logs].sort((a, b) => {
+                        let aValue: any;
+                        let bValue: any;
+                        
+                        if (sortConfig.key === 'adminName') {
+                            aValue = a.user.name || a.user.email;
+                            bValue = b.user.name || b.user.email;
+                        } else {
+                            aValue = a[sortConfig.key as keyof AuditLog];
+                            bValue = b[sortConfig.key as keyof AuditLog];
+                        }
+                        
+                        if (aValue === bValue) return 0;
+                        
+                        if (sortConfig.direction === 'asc') {
+                            return aValue < bValue ? -1 : 1;
+                        } else {
+                            return aValue > bValue ? -1 : 1;
+                        }
+                    })} 
                     columns={columns} 
                     loading={loading}
                     emptyMessage="No audit logs match your filters."
+                    onSort={handleSort}
+                    sortKey={sortConfig.key as any}
+                    sortDirection={sortConfig.direction}
                 />
             </div>
         </div>
     );
 }
+

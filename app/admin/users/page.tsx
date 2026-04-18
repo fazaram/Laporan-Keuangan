@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
 
 interface User {
@@ -17,6 +17,14 @@ interface User {
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    
+    const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [sortConfig, setSortConfig] = useState<{
+        key: keyof User;
+        direction: 'asc' | 'desc';
+    }>({ key: 'createdAt', direction: 'desc' });
 
     useEffect(() => {
         fetchUsers();
@@ -34,25 +42,18 @@ export default function UsersPage() {
         }
     };
 
-    const handleUpdateStatus = async (id: string, currentStatus: string) => {
-        const newStatus = currentStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-        if (!confirm(`Are you sure you want to ${newStatus === 'SUSPENDED' ? 'suspend' : 'activate'} this user?`)) return;
-
-        try {
-            const res = await fetch(`/api/admin/users/${id}/status`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus }),
-            });
-            if (res.ok) fetchUsers();
-        } catch (error) {
-            console.error('Failed to update status:', error);
+    const handleSort = (key: keyof User) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
         }
+        setSortConfig({ key, direction });
     };
 
     const columns = [
         {
             header: 'User',
+            sortKey: 'name' as keyof User,
             accessor: (user: User) => (
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
@@ -67,6 +68,7 @@ export default function UsersPage() {
         },
         {
             header: 'Role',
+            sortKey: 'role' as keyof User,
             accessor: (user: User) => (
                 <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
                     user.role === 'ADMIN' ? 'bg-purple-50 text-purple-600' : 
@@ -78,6 +80,7 @@ export default function UsersPage() {
         },
         {
             header: 'Status',
+            sortKey: 'status' as keyof User,
             accessor: (user: User) => (
                 <span className={`flex items-center gap-1.5 text-xs font-semibold ${
                     user.status === 'ACTIVE' ? 'text-emerald-600' : 'text-red-500'
@@ -91,7 +94,8 @@ export default function UsersPage() {
         },
         {
             header: 'Joined At',
-            accessor: (user: User) => formatDate(user.createdAt),
+            sortKey: 'createdAt' as keyof User,
+            accessor: (user: User) => formatDateTime(user.createdAt),
         },
         {
             header: 'Actions',
@@ -140,6 +144,28 @@ export default function UsersPage() {
         },
     ];
 
+    const filteredUsers = users
+        .filter(user => {
+            const matchesSearch = !searchQuery || 
+                user.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                user.email.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesRole = !roleFilter || user.role === roleFilter;
+            const matchesStatus = !statusFilter || user.status === statusFilter;
+            return matchesSearch && matchesRole && matchesStatus;
+        })
+        .sort((a, b) => {
+            const aValue = a[sortConfig.key] || '';
+            const bValue = b[sortConfig.key] || '';
+            
+            if (aValue === bValue) return 0;
+            
+            if (sortConfig.direction === 'asc') {
+                return aValue < bValue ? -1 : 1;
+            } else {
+                return aValue > bValue ? -1 : 1;
+            }
+        });
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -170,17 +196,27 @@ export default function UsersPage() {
                         <input 
                             type="text" 
                             placeholder="Filter users by name or email..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-neutral-50 border-neutral-200 rounded-xl py-2 pl-9 pr-4 text-xs focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <select className="bg-white border-neutral-200 rounded-xl py-2 px-3 text-xs font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none">
+                        <select 
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                            className="bg-white border-neutral-200 rounded-xl py-2 px-3 text-xs font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none"
+                        >
                             <option value="">All Roles</option>
                             <option value="ADMIN">Admin</option>
                             <option value="USER">User</option>
                             <option value="VIEWER">Viewer</option>
                         </select>
-                        <select className="bg-white border-neutral-200 rounded-xl py-2 px-3 text-xs font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none">
+                        <select 
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="bg-white border-neutral-200 rounded-xl py-2 px-3 text-xs font-medium focus:ring-2 focus:ring-emerald-500/10 outline-none"
+                        >
                             <option value="">All Stats</option>
                             <option value="ACTIVE">Active</option>
                             <option value="SUSPENDED">Suspended</option>
@@ -189,10 +225,13 @@ export default function UsersPage() {
                 </div>
 
                 <DataTable 
-                    data={users} 
+                    data={filteredUsers} 
                     columns={columns} 
                     loading={loading}
                     emptyMessage="No users found in the system."
+                    onSort={handleSort}
+                    sortKey={sortConfig.key}
+                    sortDirection={sortConfig.direction}
                 />
             </div>
         </div>

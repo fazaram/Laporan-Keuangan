@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import ReactMarkdown from 'react-markdown';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 const CATEGORIES = {
     'Rumah Tangga': [
@@ -54,7 +55,13 @@ export default function LandingPage() {
     }, [income, totalExpense]);
 
     const handleInputChange = (key: string, value: string) => {
-        const numValue = parseInt(value.replace(/\D/g, '')) || 0;
+        let numValue = parseInt(value.replace(/\D/g, '')) || 0;
+        
+        // Apply global limit
+        if (numValue > MAX_ALLOWED_AMOUNT) {
+            numValue = MAX_ALLOWED_AMOUNT;
+        }
+
         if (key === 'income') {
             setIncome(numValue);
         } else {

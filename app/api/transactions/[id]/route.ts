@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { AuditLogger } from '@/lib/audit/logger';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,14 @@ export async function PUT(
 
         const body = await request.json();
         const { date, category, amount, type, description } = body;
+        
+        const numericAmount = Number(amount);
+        if (numericAmount > MAX_ALLOWED_AMOUNT) {
+            return NextResponse.json(
+                { error: `Nominal tidak boleh melebihi Rp 100 Triliun (100.000.000.000.000)` },
+                { status: 400 }
+            );
+        }
 
         // Update transaction - properly handle all fields
         const transaction = await prisma.transaction.update({

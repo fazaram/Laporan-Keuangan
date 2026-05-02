@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { syncFixedIncomeTransactions } from './fixed-income-sync';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 export async function updateProfile(formData: FormData) {
     try {
@@ -59,6 +60,10 @@ export async function updateFixedIncome(formData: FormData) {
 
         if (isNaN(amount) || amount < 0) {
             return { error: 'Nominal tidak valid' };
+        }
+        
+        if (amount > MAX_ALLOWED_AMOUNT) {
+            return { error: `Nominal tidak boleh melebihi Rp ${MAX_ALLOWED_AMOUNT.toLocaleString('id-ID')}` };
         }
 
         await prisma.user.update({

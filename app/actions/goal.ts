@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { GoalService } from '@/lib/services/goal-service';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 export async function createGoal(formData: FormData) {
     try {
@@ -20,6 +21,10 @@ export async function createGoal(formData: FormData) {
 
         if (!name || isNaN(targetAmount) || isNaN(durationMonths) || !startDateString) {
             return { error: 'Semua kolom wajib diisi dengan benar' };
+        }
+        
+        if (targetAmount > MAX_ALLOWED_AMOUNT) {
+            return { error: `Target nominal tidak boleh melebihi Rp ${MAX_ALLOWED_AMOUNT.toLocaleString('id-ID')}` };
         }
 
         // Cek duplikat nama goal untuk user yang sama
@@ -144,6 +149,10 @@ export async function updateGoal(id: string, data: { name: string; targetAmount:
 
         if (!data.name || isNaN(data.targetAmount) || data.targetAmount <= 0) {
             return { error: 'Data tidak valid' };
+        }
+        
+        if (data.targetAmount > MAX_ALLOWED_AMOUNT) {
+            return { error: `Target nominal tidak boleh melebihi Rp ${MAX_ALLOWED_AMOUNT.toLocaleString('id-ID')}` };
         }
 
         const goal = await prisma.goal.findUnique({ where: { id, userId: session.user.id } });

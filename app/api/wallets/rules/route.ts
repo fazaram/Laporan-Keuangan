@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,12 @@ export async function POST(request: NextRequest) {
             if (totalPercentage + Number(percentage) > 100) {
                 return NextResponse.json({ error: 'Total allocation percentage cannot exceed 100%' }, { status: 400 });
             }
+        }
+        
+        if (fixedAmount && Number(fixedAmount) > MAX_ALLOWED_AMOUNT) {
+            return NextResponse.json({ 
+                error: `Nominal tetap tidak boleh melebihi Rp ${MAX_ALLOWED_AMOUNT.toLocaleString('id-ID')}` 
+            }, { status: 400 });
         }
 
         const rule = await prisma.walletRule.create({

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { updateFixedIncome } from '@/app/actions/profile';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
+import { CurrencyInput } from './CurrencyInput';
 
 interface FixedIncomeModalProps {
     user: {
@@ -14,6 +16,7 @@ interface FixedIncomeModalProps {
 export function FixedIncomeModal({ user, onClose }: FixedIncomeModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [amount, setAmount] = useState(user.fixedIncome?.toString() || '');
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -55,15 +58,16 @@ export function FixedIncomeModal({ user, onClose }: FixedIncomeModalProps) {
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
-                        <input
-                            type="number"
-                            name="amount"
-                            defaultValue={user.fixedIncome || ''}
-                            required
-                            min="0"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                            placeholder="Contoh: 5000000"
-                        />
+                        <div className="relative">
+                            <input type="hidden" name="amount" value={amount} />
+                            <CurrencyInput
+                                value={amount}
+                                onValueChange={setAmount}
+                                required
+                                placeholder="Rp 0"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            />
+                        </div>
                         <p className="mt-1 text-[10px] text-gray-500 italic">*Nilai ini akan ditambahkan ke pemasukan bulanan otomatis.</p>
                     </div>
 

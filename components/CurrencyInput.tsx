@@ -1,4 +1,4 @@
-import React, { InputHTMLAttributes } from 'react';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 interface CurrencyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
     value: string | number;
@@ -10,6 +10,13 @@ export function CurrencyInput({ value, onValueChange, className, placeholder, ..
         if (val === undefined || val === null || val === '') return '';
         
         let strVal = val.toString();
+        
+        // Cap the value even during formatting to be safe
+        let numericVal = parseFloat(strVal.replace('Rp ', '').replace(/\./g, '').replace(',', '.'));
+        if (!isNaN(numericVal) && numericVal > MAX_ALLOWED_AMOUNT) {
+            strVal = MAX_ALLOWED_AMOUNT.toString();
+        }
+
         // If it's a standard JS number string (uses dot), convert to comma to match UI expectations
         if (!strVal.includes(',') && strVal.includes('.')) {
             strVal = strVal.replace('.', ',');
@@ -37,7 +44,22 @@ export function CurrencyInput({ value, onValueChange, className, placeholder, ..
         const finalValue = parts[0] + (parts.length > 1 ? ',' + parts[1].slice(0, 2) : '');
         
         // Convert to internal format (standard number with point) for the parent
-        const parentValue = finalValue.replace(',', '.');
+        let numericValue = parseFloat(finalValue.replace(',', '.'));
+        
+        if (isNaN(numericValue)) {
+            onValueChange('');
+            return;
+        }
+
+        // Limit to 15 digits to prevent Quadrillion+ values and precision issues
+        if (parts[0].length > 15 || numericValue > MAX_ALLOWED_AMOUNT) {
+            // REVERT: Stop the input from updating if it exceeds the limit
+            e.target.value = formatValue(value);
+            return;
+        }
+        
+        // Use a string representation that avoids scientific notation
+        const parentValue = numericValue.toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 2 }).replace(',', '.');
         onValueChange(parentValue);
     };
 

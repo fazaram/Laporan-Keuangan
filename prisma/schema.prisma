@@ -18,7 +18,7 @@ model User {
   bio                  String?
   birthDate            DateTime?         @db.Date
   profileImage         String?
-  fixedIncome          Decimal?          @db.Decimal(15, 2)
+  fixedIncome          Decimal?          @db.Decimal(20, 2)
   fixedIncomeStartDate DateTime?         @db.Date
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
@@ -41,7 +41,7 @@ model Transaction {
   id          String          @id @default(cuid())
   date        DateTime
   category    String
-  amount      Decimal         @db.Decimal(15, 2)
+  amount      Decimal         @db.Decimal(20, 2)
   type        TransactionType
   description String?
   userId      String
@@ -60,12 +60,12 @@ model MonthlyAnalysis {
   id                   String   @id @default(cuid())
   year                 Int
   month                Int
-  totalIncome          Decimal  @db.Decimal(15, 2)
-  totalExpense         Decimal  @db.Decimal(15, 2)
-  balance              Decimal  @db.Decimal(15, 2)
-  previousMonthIncome  Decimal? @db.Decimal(15, 2)
-  previousMonthExpense Decimal? @db.Decimal(15, 2)
-  previousMonthBalance Decimal? @db.Decimal(15, 2)
+  totalIncome          Decimal  @db.Decimal(20, 2)
+  totalExpense         Decimal  @db.Decimal(20, 2)
+  balance              Decimal  @db.Decimal(20, 2)
+  previousMonthIncome  Decimal? @db.Decimal(20, 2)
+  previousMonthExpense Decimal? @db.Decimal(20, 2)
+  previousMonthBalance Decimal? @db.Decimal(20, 2)
   analysis             String?
   recommendations      String?
   userId               String
@@ -81,14 +81,14 @@ model MonthlyAnalysis {
 model YearlyAnalysis {
   id                    String   @id @default(cuid())
   year                  Int
-  totalIncome           Decimal  @db.Decimal(15, 2)
-  totalExpense          Decimal  @db.Decimal(15, 2)
-  balance               Decimal  @db.Decimal(15, 2)
-  averageMonthlyIncome  Decimal  @db.Decimal(15, 2)
-  averageMonthlyExpense Decimal  @db.Decimal(15, 2)
-  previousYearIncome    Decimal? @db.Decimal(15, 2)
-  previousYearExpense   Decimal? @db.Decimal(15, 2)
-  previousYearBalance   Decimal? @db.Decimal(15, 2)
+  totalIncome           Decimal  @db.Decimal(20, 2)
+  totalExpense          Decimal  @db.Decimal(20, 2)
+  balance               Decimal  @db.Decimal(20, 2)
+  averageMonthlyIncome  Decimal  @db.Decimal(20, 2)
+  averageMonthlyExpense Decimal  @db.Decimal(20, 2)
+  previousYearIncome    Decimal? @db.Decimal(20, 2)
+  previousYearExpense   Decimal? @db.Decimal(20, 2)
+  previousYearBalance   Decimal? @db.Decimal(20, 2)
   analysis              String?
   recommendations       String?
   userId                String
@@ -124,8 +124,8 @@ model Goal {
   id             String           @id @default(cuid())
   userId         String
   name           String
-  targetAmount   Decimal          @db.Decimal(15, 2)
-  currentAmount  Decimal          @default(0) @db.Decimal(15, 2)
+  targetAmount   Decimal          @db.Decimal(20, 2)
+  currentAmount  Decimal          @default(0) @db.Decimal(20, 2)
   durationMonths Int
   startDate      DateTime         @db.Date
   priority       GoalPriority     @default(MEDIUM)
@@ -143,7 +143,7 @@ model GoalAllocation {
   id          String   @id @default(cuid())
   userId      String
   goalId      String
-  amount      Decimal  @db.Decimal(15, 2)
+  amount      Decimal  @db.Decimal(20, 2)
   month       Int
   year        Int
   description String?
@@ -175,8 +175,8 @@ model Wallet {
   userId       String
   name         String
   icon         String?
-  budgetAmount Decimal       @default(0) @db.Decimal(15, 2)
-  spentAmount  Decimal       @default(0) @db.Decimal(15, 2)
+  budgetAmount Decimal       @default(0) @db.Decimal(20, 2)
+  spentAmount  Decimal       @default(0) @db.Decimal(20, 2)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -192,7 +192,7 @@ model WalletRule {
   userId      String
   walletId    String
   percentage  Decimal? @db.Decimal(5, 2) // e.g. 10.50 (for 10.5%)
-  fixedAmount Decimal? @db.Decimal(15, 2)
+  fixedAmount Decimal? @db.Decimal(20, 2)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -6,6 +6,7 @@ import { AuditLogger } from '@/lib/audit/logger';
 import { WalletService } from '@/lib/services/wallet-service';
 import { TransactionType } from '@prisma/client';
 import { GoalService } from '@/lib/services/goal-service';
+import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +89,14 @@ export async function POST(request: NextRequest) {
         if (!date || !category || !amount || !type) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
+                { status: 400 }
+            );
+        }
+        
+        const numericAmount = Number(amount);
+        if (numericAmount > MAX_ALLOWED_AMOUNT) {
+            return NextResponse.json(
+                { error: `Nominal tidak boleh melebihi Rp 100 Triliun (100.000.000.000.000)` },
                 { status: 400 }
             );
         }

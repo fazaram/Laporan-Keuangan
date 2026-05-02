@@ -27,6 +27,20 @@ export default function GoalsMonitoringPage() {
         direction: 'asc' | 'desc';
     }>({ key: 'createdAt', direction: 'desc' });
 
+    const fetchGoals = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch('/api/admin/monitoring/goals');
+            if (!res.ok) throw new Error('Failed to fetch goals');
+            const data = await res.json();
+            setGoals(data);
+        } catch (error) {
+            console.error('Error fetching goals:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchGoals();
     }, []);

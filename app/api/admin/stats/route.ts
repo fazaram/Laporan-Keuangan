@@ -16,21 +16,11 @@ export async function GET() {
         const [
             totalUsers,
             totalTransactions,
-            totalIncomeRaw,
-            totalExpenseRaw,
             activeGoals,
             aiRequestsToday
         ] = await Promise.all([
             prisma.user.count(),
             prisma.transaction.count(),
-            prisma.transaction.aggregate({
-                where: { type: 'INCOME' },
-                _sum: { amount: true }
-            }),
-            prisma.transaction.aggregate({
-                where: { type: 'EXPENSE' },
-                _sum: { amount: true }
-            }),
             (prisma as any).goal.count({
                 where: { status: 'ACTIVE' }
             }),
@@ -46,8 +36,6 @@ export async function GET() {
         return NextResponse.json({
             totalUsers,
             totalTransactions,
-            totalIncome: Number(totalIncomeRaw._sum.amount || 0),
-            totalExpense: Number(totalExpenseRaw._sum.amount || 0),
             activeGoals,
             aiRequestsToday
         });

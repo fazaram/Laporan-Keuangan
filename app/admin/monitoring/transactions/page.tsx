@@ -28,6 +28,20 @@ export default function TransactionsMonitoringPage() {
         direction: 'asc' | 'desc';
     }>({ key: 'date', direction: 'desc' });
 
+    const fetchTransactions = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch('/api/admin/monitoring/transactions');
+            if (!res.ok) throw new Error('Failed to fetch transactions');
+            const data = await res.json();
+            setTransactions(data);
+        } catch (error) {
+            console.error('Error fetching transactions:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchTransactions();
     }, []);

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 interface Column<T> {
     header: string;
@@ -17,6 +17,7 @@ interface DataTableProps<T> {
     onSort?: (key: keyof T) => void;
     sortKey?: keyof T;
     sortDirection?: 'asc' | 'desc';
+    pageSize?: number;
 }
 
 export function DataTable<T extends { id: string | number }>({ 
@@ -26,8 +27,11 @@ export function DataTable<T extends { id: string | number }>({
     emptyMessage = 'No data available',
     onSort,
     sortKey,
-    sortDirection
+    sortDirection,
+    pageSize = 10
 }: DataTableProps<T>) {
+    const [currentPage, setCurrentPage] = useState(1);
+
     if (loading) {
         return (
             <div className="w-full bg-white rounded-2xl border border-neutral-100 overflow-hidden">
@@ -60,9 +64,13 @@ export function DataTable<T extends { id: string | number }>({
         );
     }
 
+    // Pagination logic
+    const totalPages = Math.ceil(data.length / pageSize);
+    const paginatedData = data.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
     return (
-        <div className="w-full bg-white rounded-2xl border border-neutral-100 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
+        <div className="w-full bg-white rounded-2xl border border-neutral-100 overflow-hidden shadow-sm flex flex-col">
+            <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-neutral-50/50 border-b border-neutral-100">
@@ -99,7 +107,7 @@ export function DataTable<T extends { id: string | number }>({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100">
-                        {data.map((item) => (
+                        {paginatedData.map((item) => (
                             <tr key={item.id} className="hover:bg-neutral-50/50 transition-colors group">
                                 {columns.map((col, idx) => (
                                     <td key={idx} className={`px-6 py-4 text-sm text-neutral-600 ${col.className || ''}`}>
@@ -113,6 +121,51 @@ export function DataTable<T extends { id: string | number }>({
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="p-4 border-t border-neutral-100 bg-neutral-50/30 flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                        Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, data.length)} of {data.length} entries
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            disabled={currentPage === 1}
+                            onClick={() => setCurrentPage(prev => prev - 1)}
+                            className="p-2 text-neutral-400 hover:text-emerald-600 disabled:opacity-30 disabled:hover:text-neutral-400 transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }).map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                                        currentPage === i + 1 
+                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' 
+                                        : 'text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600'
+                                    }`}
+                                >
+                                    {i + 1}
+                                </button>
+                            ))}
+                        </div>
+                        <button 
+                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(prev => prev + 1)}
+                            className="p-2 text-neutral-400 hover:text-emerald-600 disabled:opacity-30 disabled:hover:text-neutral-400 transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+

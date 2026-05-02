@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const action = searchParams.get('action') as 'CREATE' | 'UPDATE' | 'DELETE' | null;
         const entityType = searchParams.get('entityType');
+        const userId = searchParams.get('userId');
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
         const limit = parseInt(searchParams.get('limit') || '50');
@@ -31,9 +32,11 @@ export async function GET(request: NextRequest) {
             offset,
         };
 
-        // VIEWER and ADMIN can see all audit logs
-        // Regular USER would be restricted (but currently audit is VIEWER+ADMIN only)
-        if (session.user.role !== 'VIEWER' && session.user.role !== 'ADMIN') {
+        // If userId is provided in params, filter by it
+        // Otherwise, if viewer/admin, they see all (unless restricted further)
+        if (userId) {
+            filters.userId = userId;
+        } else if (session.user.role !== 'VIEWER' && session.user.role !== 'ADMIN') {
             filters.userId = session.user.id;
         }
 

@@ -41,6 +41,31 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
         }
     };
 
+    const handleUpdateStatus = async () => {
+        if (!user) return;
+        const newStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+        if (!confirm(`Are you sure you want to ${newStatus === 'ACTIVE' ? 'activate' : 'suspend'} this user?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${user.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) {
+                fetchUser();
+            } else {
+                alert('Failed to update status');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleResetPassword = async () => {
+        alert('Reset password functionality would send a link or reset to a default password. (API endpoint not yet implemented)');
+    };
+
     if (loading) return <div className="p-8 text-neutral-400">Loading user profile...</div>;
     if (!user) return <div className="p-8 text-red-500">User not found</div>;
 
@@ -78,8 +103,22 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 bg-neutral-100 text-neutral-600 text-xs font-bold rounded-xl hover:bg-neutral-200 transition-all uppercase tracking-widest">Suspend User</button>
-                    <button className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold rounded-xl hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200 uppercase tracking-widest">Reset Password</button>
+                    <button 
+                        onClick={handleUpdateStatus}
+                        className={`px-4 py-2 text-xs font-bold rounded-xl transition-all uppercase tracking-widest ${
+                            user.status === 'ACTIVE' 
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                        }`}
+                    >
+                        {user.status === 'ACTIVE' ? 'Suspend User' : 'Activate User'}
+                    </button>
+                    <button 
+                        onClick={handleResetPassword}
+                        className="px-4 py-2 bg-neutral-900 text-white text-xs font-bold rounded-xl hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-200 uppercase tracking-widest"
+                    >
+                        Reset Password
+                    </button>
                 </div>
             </div>
 
@@ -149,7 +188,7 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                             </div>
                         ))}
                      </div>
-                     <Link href="/admin/logs/audit" className="mt-8 text-center text-[10px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest transition-all">View All Activity</Link>
+                     <Link href={`/admin/logs/audit?userId=${user.id}`} className="mt-8 text-center text-[10px] font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest transition-all">View All Activity</Link>
                 </div>
             </div>
         </div>

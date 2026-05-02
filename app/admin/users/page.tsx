@@ -50,6 +50,61 @@ export default function UsersPage() {
         setSortConfig({ key, direction });
     };
 
+    const handleUpdateStatus = async (id: string, currentStatus: string) => {
+        if (!confirm(`Are you sure you want to ${currentStatus === 'ACTIVE' ? 'suspend' : 'activate'} this user?`)) return;
+        
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: currentStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' })
+            });
+            if (res.ok) {
+                fetchUsers();
+            } else {
+                alert('Failed to update user status');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleChangeRole = async (id: string, newRole: string) => {
+        if (!confirm(`Change user role to ${newRole}?`)) return;
+        
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: newRole })
+            });
+            if (res.ok) {
+                fetchUsers();
+            } else {
+                alert('Failed to update user role');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleDeleteUser = async (id: string) => {
+        if (!confirm('Are you absolutely sure you want to delete this user? This cannot be undone.')) return;
+        
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                fetchUsers();
+            } else {
+                alert('Failed to delete user');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const columns = [
         {
             header: 'User',
@@ -129,6 +184,15 @@ export default function UsersPage() {
                             </svg>
                         )}
                     </button>
+                    <button 
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete User"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
                     <div className="relative group/actions">
                         <button className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-all">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -136,7 +200,9 @@ export default function UsersPage() {
                             </svg>
                         </button>
                         <div className="absolute right-0 mt-1 w-40 bg-white border border-neutral-100 rounded-xl shadow-xl shadow-neutral-200/40 opacity-0 invisible group-hover/actions:opacity-100 group-hover/actions:visible transition-all z-50 p-1">
-                            <button className="w-full text-left px-3 py-2 text-xs font-medium text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg">Change Role</button>
+                            <button onClick={() => handleChangeRole(user.id, 'ADMIN')} className="w-full text-left px-3 py-2 text-xs font-medium text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg">Make Admin</button>
+                            <button onClick={() => handleChangeRole(user.id, 'USER')} className="w-full text-left px-3 py-2 text-xs font-medium text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg">Make User</button>
+                            <button onClick={() => handleChangeRole(user.id, 'VIEWER')} className="w-full text-left px-3 py-2 text-xs font-medium text-neutral-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg">Make Viewer</button>
                         </div>
                     </div>
                 </div>

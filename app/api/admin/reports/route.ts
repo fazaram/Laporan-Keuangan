@@ -15,50 +15,61 @@ export async function GET() {
     try {
         const months = 6;
         const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
-
-        // 1. Monthly Totals
-        const monthlyTotals = await Promise.all(
+        
+        // 1. Monthly Joins
+        const monthlyJoins = await Promise.all(
             Array.from({ length: months }).map(async (_, i) => {
                 const date = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
                 const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
-                const stats = await prisma.transaction.groupBy({
-                    by: ['type'],
+                const usersCount = await prisma.user.count({
                     where: {
-                        date: { gte: date, lt: nextMonth }
-                    },
-                    _sum: { amount: true }
+                        createdAt: { gte: date, lt: nextMonth }
+                    }
                 });
-
-                const income = Number(stats.find(s => s.type === 'INCOME')?._sum.amount || 0);
-                const expense = Number(stats.find(s => s.type === 'EXPENSE')?._sum.amount || 0);
 
                 return {
                     month: date.toLocaleString('default', { month: 'short' }),
-                    income,
-                    expense
+                    users: usersCount
                 };
             })
         );
 
-        // 2. Category Distribution
-        const categoryStats = await prisma.transaction.groupBy({
-            by: ['category'],
-            where: { type: 'EXPENSE' },
-            _sum: { amount: true },
-            orderBy: { _sum: { amount: 'desc' } },
-            take: 10
+        // 2. Role Distribution
+        const rolesData = await prisma.user.groupBy({
+            by: ['role'],
+            _count: { id: true }
         });
 
-        const categories = categoryStats.map(c => ({
-            name: c.category,
-            value: Number(c._sum.amount || 0)
+        const roles = rolesData.map(r => ({
+            name: r.role,
+            count: r._count.id
         }));
 
-        return NextResponse.json({ monthlyTotals, categories });
+        // 3. Summary Stats
+        const totalUsers = await prisma.user.count();
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const thisYearStart = new Date(now.getFullYear(), 0, 1);
+        
+        const joinedThisMonth = await prisma.user.count({
+            where: { createdAt: { gte: thisMonthStart } }
+        });
+        
+        const joinedThisYear = await prisma.user.count({
+            where: { createdAt: { gte: thisYearStart } }
+        });
+
+        return NextResponse.json({ 
+            monthlyJoins, 
+            roles, 
+            summary: { totalUsers, joinedThisMonth, joinedThisYear } 
+        });
     } catch (error) {
         console.error('Error fetching admin reports:', error);
-        return NextResponse.json({ monthlyTotals: [], categories: [] });
+        return NextResponse.json({ 
+            monthlyJoins: [], 
+            roles: [], 
+            summary: { totalUsers: 0, joinedThisMonth: 0, joinedThisYear: 0 } 
+        });
     }
 }

@@ -58,9 +58,13 @@ export default function NotificationsPage() {
                 setMessage('');
                 fetchBroadcasts();
                 alert('Broadcast sent successfully!');
+            } else {
+                const errorData = await res.json();
+                alert(`Failed to send broadcast: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             console.error('Failed to send broadcast:', error);
+            alert('An error occurred while sending the broadcast. Please check your connection.');
         } finally {
             setSending(false);
         }

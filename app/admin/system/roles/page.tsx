@@ -59,13 +59,19 @@ export default function RolesPermissionsPage() {
                             </div>
                         </div>
 
-                        <button className="mt-8 w-full py-3 bg-neutral-900 text-white text-[10px] font-black rounded-xl hover:bg-neutral-800 transition-all uppercase tracking-[0.2em]">
+                        <button 
+                            onClick={() => alert('Role scope management is an enterprise feature coming soon.')}
+                            className="mt-8 w-full py-3 bg-neutral-900 text-white text-[10px] font-black rounded-xl hover:bg-neutral-800 transition-all uppercase tracking-[0.2em]"
+                        >
                             Manage Scope
                         </button>
                     </div>
                 ))}
 
-                <div className="bg-neutral-50 p-8 rounded-2xl border border-dashed border-neutral-200 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-emerald-300 transition-all">
+                <div 
+                    onClick={() => alert('Custom role creation is currently locked.')}
+                    className="bg-neutral-50 p-8 rounded-2xl border border-dashed border-neutral-200 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-emerald-300 transition-all"
+                >
                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-neutral-400 group-hover:text-emerald-500 shadow-sm transition-all mb-4">
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
+import { useSearchParams } from 'next/navigation';
 
 interface AuditLog {
     id: string;
     action: string;
     entityType: string;
     entityId: string;
+    oldData: any;
+    newData: any;
     createdAt: string;
     user: {
         name: string | null;
@@ -17,12 +20,17 @@ interface AuditLog {
 }
 
 export default function AuditLogsPage() {
+    const searchParams = useSearchParams();
+    const userIdParam = searchParams.get('userId');
+
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
+    const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
     const [filters, setFilters] = useState({
         action: '',
         entityType: 'Transaction',
+        userId: userIdParam || '',
         limit: 50,
         offset: 0
     });
@@ -41,6 +49,7 @@ export default function AuditLogsPage() {
             const params = new URLSearchParams({
                 action: filters.action,
                 entityType: filters.entityType,
+                userId: filters.userId,
                 limit: filters.limit.toString(),
                 offset: filters.offset.toString(),
             });
@@ -54,6 +63,8 @@ export default function AuditLogsPage() {
         } finally {
             setLoading(false);
         }
+    };
+
     const handleSort = (key: any) => {
         let direction: 'asc' | 'desc' = 'asc';
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -104,7 +115,10 @@ export default function AuditLogsPage() {
             header: 'Details',
             className: 'text-right',
             accessor: (log: AuditLog) => (
-                <button className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-all">
+                <button 
+                    onClick={() => setSelectedLog(log)}
+                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline transition-all"
+                >
                     View Diff
                 </button>
             ),
@@ -179,6 +193,64 @@ export default function AuditLogsPage() {
                     sortDirection={sortConfig.direction}
                 />
             </div>
+
+            {/* Diff Modal */}
+            {selectedLog && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" onClick={() => setSelectedLog(null)}></div>
+                    <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[80vh]">
+                        <div className="p-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+                            <div>
+                                <h3 className="text-xl font-bold text-neutral-900">Changeset Detail</h3>
+                                <p className="text-xs text-neutral-500 mt-1 uppercase tracking-widest font-semibold">
+                                    {selectedLog.action} {selectedLog.entityType} #{selectedLog.entityId.slice(0, 8)}
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => setSelectedLog(null)}
+                                className="p-2 hover:bg-neutral-200 rounded-xl transition-all text-neutral-400"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Original Data</p>
+                                    <pre className="bg-neutral-50 p-4 rounded-xl text-[10px] font-mono text-neutral-600 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-neutral-100">
+                                        {selectedLog.oldData ? JSON.stringify(selectedLog.oldData, null, 2) : 'No previous data'}
+                                    </pre>
+                                </div>
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Modified Data</p>
+                                    <pre className="bg-emerald-50/30 p-4 rounded-xl text-[10px] font-mono text-neutral-900 overflow-x-auto whitespace-pre-wrap leading-relaxed border border-emerald-100">
+                                        {selectedLog.newData ? JSON.stringify(selectedLog.newData, null, 2) : 'No data recorded'}
+                                    </pre>
+                                </div>
+                            </div>
+                            
+                            <div className="pt-6 border-t border-neutral-100">
+                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                                    <span>Modified by: {selectedLog.user.name || selectedLog.user.email}</span>
+                                    <span>Date: {formatDateTime(selectedLog.createdAt)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="p-6 bg-neutral-50/50 border-t border-neutral-100 flex justify-end">
+                            <button 
+                                onClick={() => setSelectedLog(null)}
+                                className="px-6 py-2.5 bg-neutral-900 text-white text-xs font-bold rounded-xl hover:bg-neutral-800 transition-all uppercase tracking-widest"
+                            >
+                                Close Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

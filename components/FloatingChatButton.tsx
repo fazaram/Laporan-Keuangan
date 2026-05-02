@@ -33,7 +33,8 @@ export function FloatingChatButton() {
 
   const shouldHide = useMemo(() => {
     const isAuthPage = pathname === '/login' || pathname === '/register';
-    return status !== 'authenticated' || isAuthPage;
+    const isAdminPage = pathname?.startsWith('/admin');
+    return status !== 'authenticated' || isAuthPage || isAdminPage;
   }, [status, pathname]);
 
   if (shouldHide) {

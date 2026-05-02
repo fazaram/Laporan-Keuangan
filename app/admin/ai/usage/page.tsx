@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { StatCard } from '@/components/admin/StatCard';
 
+import Link from 'next/link';
+
 interface UsageData {
     dailyUsage: { date: string; count: number }[];
     topUsers: { name: string; email: string; usageCount: number }[];
@@ -109,11 +111,15 @@ export default function AiUsagePage() {
                             ))
                         )}
                     </div>
-                    <button className="mt-6 w-full py-2 bg-neutral-50 text-neutral-500 text-xs font-bold rounded-xl hover:bg-neutral-100 hover:text-neutral-900 transition-all uppercase tracking-widest">
+                    <Link 
+                        href="/admin/ai/logs"
+                        className="mt-6 w-full py-2 bg-neutral-50 text-neutral-500 text-xs text-center font-bold rounded-xl hover:bg-neutral-100 hover:text-neutral-900 transition-all uppercase tracking-widest"
+                    >
                         View Full Report
-                    </button>
+                    </Link>
                 </div>
             </div>
         </div>
     );
 }
+

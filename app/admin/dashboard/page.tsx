@@ -93,42 +93,7 @@ export default function AdminDashboard() {
                 ))}
             </div>
 
-            {/* Charts Section Placeholder */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm h-[400px] flex flex-col">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className="text-lg font-bold text-neutral-900">User Growth</h3>
-                            <p className="text-sm text-neutral-400">Total registered users over time</p>
-                        </div>
-                        <div className="p-2 bg-neutral-50 rounded-lg text-neutral-400">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-                        <p className="text-neutral-400 text-sm font-medium">Chart visualization coming soon...</p>
-                    </div>
-                </div>
 
-                <div className="bg-white p-8 rounded-2xl border border-neutral-100 shadow-sm h-[400px] flex flex-col">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className="text-lg font-bold text-neutral-900">Transaction Volume</h3>
-                            <p className="text-sm text-neutral-400">Global transaction activity</p>
-                        </div>
-                        <div className="p-2 bg-neutral-50 rounded-lg text-neutral-400">
-                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="flex-1 flex items-center justify-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-                        <p className="text-neutral-400 text-sm font-medium">Chart visualization coming soon...</p>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

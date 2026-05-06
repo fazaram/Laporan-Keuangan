@@ -16,6 +16,14 @@ interface Transaction {
     amount: number;
     type: 'INCOME' | 'EXPENSE';
     description: string | null;
+    walletId: string | null;
+    wallet?: { name: string; color: string };
+}
+
+interface Wallet {
+    id: string;
+    name: string;
+    balance: number;
 }
 
 export default function TransactionsPage() {
@@ -33,17 +41,30 @@ export default function TransactionsPage() {
         direction: 'asc' | 'desc';
     }>({ key: 'date', direction: 'desc' });
 
+    const [wallets, setWallets] = useState<Wallet[]>([]);
     const [formData, setFormData] = useState({
         date: getLocalDatetime(),
         category: '',
         amount: '',
         type: 'INCOME' as 'INCOME' | 'EXPENSE',
         description: '',
+        walletId: '',
     });
 
     useEffect(() => {
         fetchTransactions();
+        fetchWallets();
     }, []);
+
+    const fetchWallets = async () => {
+        try {
+            const res = await fetch('/api/wallets');
+            const data = await res.json();
+            setWallets(data.wallets || []);
+        } catch (error) {
+            console.error('Error fetching wallets:', error);
+        }
+    };
 
     const fetchTransactions = async () => {
         try {
@@ -70,6 +91,7 @@ export default function TransactionsPage() {
                 body: JSON.stringify({
                     ...formData,
                     amount: parseFloat(formData.amount),
+                    walletId: formData.type === 'EXPENSE' ? (formData.walletId || null) : null,
                 }),
             });
 
@@ -82,8 +104,12 @@ export default function TransactionsPage() {
                     amount: '',
                     type: 'INCOME',
                     description: '',
+                    walletId: '',
                 });
                 fetchTransactions();
+            } else {
+                const errorData = await res.json();
+                alert(errorData.error || 'Gagal menyimpan transaksi');
             }
         } catch (error) {
             console.error('Error saving transaction:', error);
@@ -97,6 +123,7 @@ export default function TransactionsPage() {
             amount: tx.amount.toString(),
             type: tx.type,
             description: tx.description || '',
+            walletId: tx.walletId || '',
         });
         setEditingId(tx.id);
         setShowForm(true);
@@ -115,6 +142,30 @@ export default function TransactionsPage() {
             }
         } catch (error) {
             console.error('Error deleting transaction:', error);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Hapus ${selectedIds.length} transaksi terpilih?`)) return;
+
+        try {
+            const res = await fetch('/api/transactions', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds }),
+            });
+
+            if (res.ok) {
+                setSelectedIds([]);
+                fetchTransactions();
+            } else {
+                const error = await res.json();
+                alert(error.error || 'Gagal menghapus transaksi');
+            }
+        } catch (error) {
+            console.error('Error in bulk delete:', error);
+            alert('Terjadi kesalahan saat menghapus transaksi');
         }
     };
 
@@ -178,6 +229,7 @@ export default function TransactionsPage() {
                                         amount: '',
                                         type: 'INCOME',
                                         description: '',
+                                        walletId: '',
                                     });
                                 }}
                                 className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
@@ -247,9 +299,27 @@ export default function TransactionsPage() {
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
                                     <option value="INCOME">Pemasukan</option>
-                                    <option value="EXPENSE">Pengeluaran</option>
                                 </select>
                             </div>
+
+                            {formData.type === 'EXPENSE' && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pilih Wallet (Pocket)
+                                    </label>
+                                    <select
+                                        value={formData.walletId}
+                                        onChange={(e) => setFormData({ ...formData, walletId: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <option value="">Saldo Utama (Tanpa Wallet)</option>
+                                        {wallets.map(w => (
+                                            <option key={w.id} value={w.id}>{w.name} (Tersedia: {formatCurrency(w.balance)})</option>
+                                        ))}
+                                    </select>
+                                    <p className="mt-1 text-xs text-gray-400">Pilih pocket untuk memotong saldo dari wallet tertentu.</p>
+                                </div>
+                            )}
 
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">

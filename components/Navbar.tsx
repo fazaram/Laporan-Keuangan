@@ -15,6 +15,7 @@ export function Navbar() {
 
     const navItems = [
         { href: '/dashboard', label: 'Dashboard', icon: '📊' },
+        { href: '/wallet', label: 'Smart Wallet', icon: '👛' },
         { href: '/transactions', label: 'Transaksi', icon: '💰' },
         { href: '/goals', label: 'Tabungan', icon: '🎯' },
         { href: '/reports/monthly', label: 'Laporan Bulanan', icon: '📅' },

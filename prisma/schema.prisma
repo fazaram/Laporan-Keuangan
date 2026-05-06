@@ -31,6 +31,7 @@ model User {
   yearlyAnalyses       YearlyAnalysis[]
   wallets              Wallet[]
   walletRules          WalletRule[]
+  walletTransactions   WalletTransaction[]
   status               UserStatus        @default(ACTIVE)
   broadcasts           Broadcast[]
 
@@ -175,6 +176,8 @@ model Wallet {
   userId       String
   name         String
   icon         String?
+  color        String        @default("#3B82F6")
+  balance      Decimal       @default(0) @db.Decimal(20, 2)
   budgetAmount Decimal       @default(0) @db.Decimal(20, 2)
   spentAmount  Decimal       @default(0) @db.Decimal(20, 2)
   createdAt    DateTime      @default(now())
@@ -210,6 +213,21 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 
   @@map("system_config")
+}
+
+model WalletTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  fromWalletId String?
+  toWalletId   String?
+  amount       Decimal  @db.Decimal(20, 2)
+  type         String   // TRANSFER, TOPUP, WITHDRAW
+  description  String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("wallet_transactions")
 }
 
 model Broadcast {

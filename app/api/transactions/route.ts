@@ -25,38 +25,82 @@ export async function GET(request: NextRequest) {
         const category = searchParams.get('category');
 
         const where: any = {};
+        const walletWhere: any = {
+            userId: session.user.id,
+            type: { in: ['TOPUP', 'WITHDRAW'] }
+        };
 
-        // VIEWER can see all transactions (shared view for monitoring/audit)
-        // USER and ADMIN only see their own data
         if (session.user.role !== 'VIEWER') {
             where.userId = session.user.id;
         }
 
         if (type) {
             where.type = type;
+            // TOPUP is Expense, WITHDRAW is Income
+            if (type === 'INCOME') {
+                walletWhere.type = 'WITHDRAW';
+            } else {
+                walletWhere.type = 'TOPUP';
+            }
         }
 
         if (category) {
             where.category = category;
+            // If category filter is applied, wallet transactions (Category: Smart Wallet) 
+            // will only show if the search matches 'Smart Wallet'
+            if (category !== 'Smart Wallet') {
+                walletWhere.id = 'none'; // effectively hide
+            }
         }
 
         if (startDate && endDate) {
-            where.date = {
+            const dateRange = {
                 gte: new Date(startDate),
                 lte: new Date(endDate),
             };
+            where.date = dateRange;
+            walletWhere.createdAt = dateRange;
         }
 
-        const transactions = await prisma.transaction.findMany({
-            where,
-            orderBy: { date: 'desc' },
-        });
+        const [transactions, walletTransactions] = await Promise.all([
+            prisma.transaction.findMany({
+                where,
+                orderBy: { date: 'desc' },
+            }),
+            prisma.walletTransaction.findMany({
+                where: walletWhere,
+                include: {
+                    toWallet: true,
+                    fromWallet: true
+                },
+                orderBy: { createdAt: 'desc' }
+            })
+        ]);
 
-        return NextResponse.json({
-            transactions: transactions.map((t) => ({
+        const mergedTransactions = [
+            ...transactions.map((t) => ({
                 ...t,
                 amount: Number(t.amount),
+                date: t.date.toISOString(),
             })),
+            ...walletTransactions.map((wt) => ({
+                id: wt.id,
+                userId: wt.userId,
+                amount: Number(wt.amount),
+                type: wt.type === 'TOPUP' ? 'EXPENSE' : 'INCOME',
+                category: 'Smart Wallet',
+                description: wt.type === 'TOPUP' 
+                    ? `Alokasi ke ${wt.toWallet?.name || 'Wallet'}` 
+                    : `Penarikan dari ${wt.fromWallet?.name || 'Wallet'}`,
+                date: wt.createdAt.toISOString(),
+                createdAt: wt.createdAt.toISOString(),
+                updatedAt: wt.createdAt.toISOString(),
+                isWalletTransaction: true
+            }))
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        return NextResponse.json({
+            transactions: mergedTransactions
         });
     } catch (error) {
         console.error('Error fetching transactions:', error);

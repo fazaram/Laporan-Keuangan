@@ -5,7 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { BalanceOverview } from '@/components/wallet/BalanceOverview';
 import { WalletCard } from '@/components/wallet/WalletCard';
 import { WalletHistoryView } from '@/components/wallet/WalletHistoryView';
-import { Plus, X, ArrowRight, Wallet as WalletIcon, RefreshCw, Loader2, MoreVertical } from 'lucide-react';
+import { Plus, X, ArrowRight, Wallet as WalletIcon, RefreshCw, Loader2, MoreVertical, Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 export default function WalletPage() {
@@ -21,6 +21,14 @@ export default function WalletPage() {
     const [selectedWallet, setSelectedWallet] = useState<any>(null);
     const [historyWallet, setHistoryWallet] = useState<any>(null);
 
+    // Keep historyWallet in sync with wallets array
+    useEffect(() => {
+        if (historyWallet) {
+            const updated = wallets.find(w => w.id === historyWallet.id);
+            if (updated) setHistoryWallet(updated);
+        }
+    }, [wallets, historyWallet?.id]);
+
     // Form states
     const [formData, setFormData] = useState({
         name: '',
@@ -31,6 +39,10 @@ export default function WalletPage() {
     });
 
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Derived balances for Overview
+    const totalBalance = mainBalance;
+    const allocatedBalance = mainBalance - availableBalance;
 
     const fetchWallets = async () => {
         try {
@@ -153,6 +165,8 @@ export default function WalletPage() {
 
     const icons = ['💰', '🍔', '🚗', '🏠', '🎮', '🏥', '✈️', '🎓', '🛍️', '🎁'];
 
+    const filteredWallets = wallets.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
     if (loading && wallets.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50">
@@ -172,38 +186,37 @@ export default function WalletPage() {
                 {/* Header Section */}
                 <div className="flex items-center justify-between mb-8">
                     <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Pockets</h1>
-                    <div className="flex items-center gap-4">
-                        <button className="p-2.5 hover:bg-white rounded-xl text-gray-400 transition-all border border-transparent hover:border-gray-100">
-                            <MoreVertical size={24} />
-                        </button>
-                    </div>
+                    <button 
+                        onClick={openCreate}
+                        className="p-3 bg-white hover:bg-gray-50 rounded-2xl text-gray-400 transition-all border border-gray-100 shadow-sm"
+                    >
+                        <Plus size={24} />
+                    </button>
                 </div>
 
                 {/* Search Bar */}
                 <div className="relative mb-8">
                     <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-gray-400">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
+                        <Search size={20} />
                     </div>
                     <input 
                         type="text" 
                         placeholder="Find Pockets"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-14 pr-6 py-4 bg-gray-100/50 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-2xl outline-none transition-all text-sm font-medium"
+                        className="w-full pl-14 pr-6 py-4 bg-white border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500 transition-all text-sm font-medium shadow-sm"
                     />
                 </div>
 
                 <BalanceOverview 
-                    mainBalance={mainBalance} 
+                    totalBalance={totalBalance}
+                    allocatedBalance={allocatedBalance}
+                    availableBalance={availableBalance}
                 />
 
                 {/* Wallets Grid - Optimized for Desktop */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {wallets
-                        .filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                        .map((wallet) => (
+                    {filteredWallets.map((wallet) => (
                         <WalletCard 
                             key={wallet.id} 
                             wallet={wallet}
@@ -211,19 +224,19 @@ export default function WalletPage() {
                             onWithdraw={(w) => { setSelectedWallet(w); setModalType('WITHDRAW'); }}
                             onTransfer={(w) => { setSelectedWallet(w); setModalType('TRANSFER'); }}
                             onEdit={openEdit}
-                            onOpen={(w) => setHistoryWallet(w)}
+                            onOpen={setHistoryWallet}
                         />
                     ))}
 
                     {/* Create New Pocket Card */}
                     <button 
                         onClick={openCreate}
-                        className="rounded-[2rem] p-6 border-2 border-dashed border-gray-200 hover:border-blue-400 hover:bg-blue-50/30 transition-all group flex flex-col items-center justify-center min-h-[220px]"
+                        className="rounded-[2rem] p-6 border-2 border-dashed border-gray-200 hover:border-purple-400 hover:bg-purple-50/30 transition-all group flex flex-col items-center justify-center min-h-[220px]"
                     >
-                        <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-100 group-hover:scale-110 transition-all text-gray-300 group-hover:text-blue-600">
+                        <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-100 group-hover:scale-110 transition-all text-gray-300 group-hover:text-purple-600">
                             <Plus size={28} />
                         </div>
-                        <p className="text-sm font-bold text-gray-400 group-hover:text-blue-600">Create Pocket</p>
+                        <p className="text-sm font-bold text-gray-400 group-hover:text-purple-600">Create Pocket</p>
                     </button>
                 </div>
             </main>
@@ -232,10 +245,10 @@ export default function WalletPage() {
             {historyWallet && (
                 <WalletHistoryView 
                     wallet={historyWallet}
+                    allWallets={wallets}
+                    availableBalance={availableBalance}
                     onClose={() => setHistoryWallet(null)}
-                    onTopUp={() => { setSelectedWallet(historyWallet); setModalType('TOPUP'); }}
-                    onWithdraw={() => { setSelectedWallet(historyWallet); setModalType('WITHDRAW'); }}
-                    onTransfer={() => { setSelectedWallet(historyWallet); setModalType('TRANSFER'); }}
+                    onRefresh={fetchWallets}
                 />
             )}
 

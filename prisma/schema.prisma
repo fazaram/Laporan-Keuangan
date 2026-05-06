@@ -185,6 +185,8 @@ model Wallet {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   rules        WalletRule[]
   transactions Transaction[]
+  outgoingTransactions WalletTransaction[] @relation("FromWallet")
+  incomingTransactions WalletTransaction[] @relation("ToWallet")
 
   @@index([userId])
   @@map("wallets")
@@ -224,6 +226,8 @@ model WalletTransaction {
   type         String   // TRANSFER, TOPUP, WITHDRAW
   description  String?
   createdAt    DateTime @default(now())
+  fromWallet   Wallet?  @relation("FromWallet", fields: [fromWalletId], references: [id], onDelete: SetNull)
+  toWallet     Wallet?  @relation("ToWallet", fields: [toWalletId], references: [id], onDelete: SetNull)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

@@ -58,7 +58,7 @@ export default async function DashboardPage() {
     const userId = session.user.id;
 
     // ✅ Run ALL database queries in parallel — 4x faster than sequential
-    const [transactionsRaw, prevTransactions, allTransactions, topGoalsRaw] = await Promise.all([
+    const [transactionsRaw, prevTransactions, allTransactions, topGoalsRaw, walletsAggregate] = await Promise.all([
         // Query 1: Current month transactions (latest 10)
         prisma.transaction.findMany({
             where: {
@@ -87,6 +87,11 @@ export default async function DashboardPage() {
             orderBy: { targetAmount: 'desc' },
             take: 3,
         }),
+        // Query 5: Wallet Balances to subtract
+        prisma.wallet.aggregate({
+            where: isViewer ? {} : { userId },
+            _sum: { balance: true }
+        })
     ]);
 
     // Serialize transactions (convert Date & Decimal to plain JS types)
@@ -130,7 +135,8 @@ export default async function DashboardPage() {
         .filter((t) => t.type === TransactionType.EXPENSE)
         .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const totalSaldo = totalIncomeAllTime - totalExpenseAllTime;
+    const totalWalletBalance = Number(walletsAggregate?._sum?.balance || 0);
+    const totalSaldo = totalIncomeAllTime - totalExpenseAllTime - totalWalletBalance;
 
     return (
         <div className="min-h-screen bg-gray-50">

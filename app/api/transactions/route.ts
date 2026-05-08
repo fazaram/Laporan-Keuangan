@@ -23,6 +23,12 @@ export async function GET(request: NextRequest) {
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
         const category = searchParams.get('category');
+        const search = searchParams.get('search');
+        
+        // Pagination params
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const skip = (page - 1) * limit;
 
         const where: any = {};
         const walletWhere: any = {
@@ -36,7 +42,6 @@ export async function GET(request: NextRequest) {
 
         if (type) {
             where.type = type;
-            // TOPUP is Expense, WITHDRAW is Income
             if (type === 'INCOME') {
                 walletWhere.type = 'WITHDRAW';
             } else {
@@ -46,10 +51,27 @@ export async function GET(request: NextRequest) {
 
         if (category) {
             where.category = category;
-            // If category filter is applied, wallet transactions (Category: Smart Wallet) 
-            // will only show if the search matches 'Smart Wallet'
             if (category !== 'Smart Wallet') {
-                walletWhere.id = 'none'; // effectively hide
+                walletWhere.id = 'none';
+            }
+        }
+
+        if (search) {
+            where.OR = [
+                { category: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+            walletWhere.OR = [
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+            // Since WalletTransactions category is always 'Smart Wallet' in the merge logic,
+            // we should also include it if search matches 'Smart' or 'Wallet'
+            if ('Smart Wallet'.toLowerCase().includes(search.toLowerCase())) {
+                // If it matches 'Smart Wallet', we don't need to filter walletWhere further by OR
+                // because it already matches the "category" essentially.
+            } else {
+                // If it doesn't match 'Smart Wallet', then it MUST match the description
+                // which we already set in walletWhere.OR
             }
         }
 
@@ -65,6 +87,9 @@ export async function GET(request: NextRequest) {
         const [transactions, walletTransactions] = await Promise.all([
             prisma.transaction.findMany({
                 where,
+                include: {
+                    wallet: true // Eager loading
+                },
                 orderBy: { date: 'desc' },
             }),
             prisma.walletTransaction.findMany({
@@ -99,8 +124,18 @@ export async function GET(request: NextRequest) {
             }))
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+        // Apply pagination after merging and sorting
+        const paginatedTransactions = mergedTransactions.slice(skip, skip + limit);
+        const totalItems = mergedTransactions.length;
+
         return NextResponse.json({
-            transactions: mergedTransactions
+            transactions: paginatedTransactions,
+            pagination: {
+                total: totalItems,
+                totalPages: Math.ceil(totalItems / limit),
+                currentPage: page,
+                limit
+            }
         });
     } catch (error) {
         console.error('Error fetching transactions:', error);
@@ -221,7 +256,7 @@ export async function DELETE(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { ids } = body;
+        const { ids, isWalletTransaction } = body;
 
         if (!ids || !Array.isArray(ids) || ids.length === 0) {
             return NextResponse.json(
@@ -230,54 +265,65 @@ export async function DELETE(request: NextRequest) {
             );
         }
 
-        // Validate that all transactions belong to the user (unless admin, but for now enforce userId)
-        const transactionsToDelete = await prisma.transaction.findMany({
+        // We handle regular and wallet transactions separately
+        let deletedRegularCount = 0;
+        let deletedWalletCount = 0;
+
+        // 1. Handle Wallet Transactions
+        // If isWalletTransaction is passed as a flag for the whole set, or we can check ID patterns
+        // But the user might be deleting a mix. For now, let's look for both.
+        
+        // Find which ones are regular transactions
+        const regularTransactionsToDelete = await prisma.transaction.findMany({
             where: {
                 id: { in: ids },
                 userId: session.user.id,
             },
         });
 
-        if (transactionsToDelete.length === 0) {
-            return NextResponse.json(
-                { error: 'No matching transactions found or unauthorized' },
-                { status: 404 }
-            );
+        const regularIds = regularTransactionsToDelete.map(t => t.id);
+        const otherIds = ids.filter(id => !regularIds.includes(id));
+
+        // Delete Regular Transactions
+        if (regularIds.length > 0) {
+            // Revert wallet impact for each before deleting
+            for (const t of regularTransactionsToDelete) {
+                await WalletService.reverseTransactionImpact(session.user.id, t.id);
+            }
+
+            await prisma.transaction.deleteMany({
+                where: { id: { in: regularIds } }
+            });
+            deletedRegularCount = regularIds.length;
+
+            // Audit Log
+            for (const t of regularTransactionsToDelete) {
+                await AuditLogger.logDelete(session.user.id, 'Transaction', t.id, {
+                    date: t.date,
+                    category: t.category,
+                    amount: Number(t.amount),
+                    type: t.type
+                }, request);
+            }
         }
 
-        const validIds = transactionsToDelete.map(t => t.id);
-
-        await prisma.transaction.deleteMany({
-            where: {
-                id: { in: validIds },
-            },
-        });
-
-        // Audit log for multiple deletions
-        for (const transaction of transactionsToDelete) {
-            try {
-                await AuditLogger.logDelete(
-                    session.user.id,
-                    'Transaction',
-                    transaction.id,
-                    {
-                        date: transaction.date,
-                        category: transaction.category,
-                        amount: Number(transaction.amount),
-                        type: transaction.type,
-                        description: transaction.description,
-                    },
-                    request
-                );
-            } catch (err) {
-                console.error('Audit log error on bulk delete:', err);
+        // 2. Handle Wallet Transactions (internal moves)
+        if (otherIds.length > 0) {
+            for (const id of otherIds) {
+                try {
+                    await WalletService.deleteWalletTransaction(session.user.id, id);
+                    deletedWalletCount++;
+                } catch (err) {
+                    console.error(`Failed to delete wallet transaction ${id}:`, err);
+                }
             }
         }
 
         return NextResponse.json({
             success: true,
-            message: `Successfully deleted ${validIds.length} transactions`,
-            deletedCount: validIds.length
+            message: `Successfully deleted ${deletedRegularCount + deletedWalletCount} transactions`,
+            deletedRegularCount,
+            deletedWalletCount
         });
     } catch (error) {
         console.error('Error in bulk deleting transactions:', error);

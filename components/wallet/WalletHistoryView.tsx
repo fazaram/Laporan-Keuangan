@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/components/ToastProvider';
 import { 
     X, ArrowLeft, Search, Plus, ArrowUpRight, Send, 
     Calendar, MoreHorizontal, Copy, Link2, Info, Loader2, Trash2, AlertCircle
@@ -16,6 +17,7 @@ interface WalletHistoryViewProps {
 }
 
 export function WalletHistoryView({ wallet, allWallets, availableBalance, onClose, onRefresh }: WalletHistoryViewProps) {
+    const { showToast, showConfirm } = useToast();
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +49,12 @@ export function WalletHistoryView({ wallet, allWallets, availableBalance, onClos
     }, [wallet.id]);
 
     const handleDelete = async (item: any) => {
-        if (!confirm('Hapus transaksi ini? Saldo akan dikembalikan secara otomatis.')) return;
+        const confirmed = await showConfirm({
+            title: 'Hapus Transaksi',
+            message: 'Hapus transaksi ini? Saldo akan dikembalikan secara otomatis.',
+            danger: true
+        });
+        if (!confirmed) return;
         
         try {
             setDeletingId(item.id);
@@ -65,7 +72,7 @@ export function WalletHistoryView({ wallet, allWallets, availableBalance, onClos
             onRefresh(); // Refresh wallets in parent
             fetchHistory(); // Refresh local history
         } catch (err: any) {
-            alert(err.message);
+            showToast(err.message, 'error');
         } finally {
             setDeletingId(null);
         }
@@ -109,6 +116,7 @@ export function WalletHistoryView({ wallet, allWallets, availableBalance, onClos
             if (data.error) throw new Error(data.error);
             
             // Success!
+            showToast(`${activeAction} berhasil`, 'success');
             setAmount('');
             setSourceId('MAIN');
             setActiveAction(null);

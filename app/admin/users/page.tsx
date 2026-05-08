@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
+import { useToast } from '@/components/ToastProvider';
 
 interface User {
     id: string;
@@ -15,6 +16,7 @@ interface User {
 }
 
 export default function UsersPage() {
+    const { showToast, showConfirm } = useToast();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     
@@ -51,7 +53,15 @@ export default function UsersPage() {
     };
 
     const handleUpdateStatus = async (id: string, currentStatus: string) => {
-        if (!confirm(`Are you sure you want to ${currentStatus === 'ACTIVE' ? 'suspend' : 'activate'} this user?`)) return;
+        const action = currentStatus === 'ACTIVE' ? 'suspend' : 'activate';
+        const confirmed = await showConfirm({
+            title: `${action === 'suspend' ? 'Suspend' : 'Activate'} User`,
+            message: `Are you sure you want to ${action} this user?`,
+            danger: action === 'suspend',
+            confirmText: action === 'suspend' ? 'Yes, Suspend' : 'Yes, Activate'
+        });
+        
+        if (!confirmed) return;
         
         try {
             const res = await fetch(`/api/admin/users/${id}`, {
@@ -60,17 +70,22 @@ export default function UsersPage() {
                 body: JSON.stringify({ status: currentStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' })
             });
             if (res.ok) {
+                showToast(`User ${action === 'suspend' ? 'suspended' : 'activated'}`, 'success');
                 fetchUsers();
             } else {
-                alert('Failed to update user status');
+                showToast('Failed to update user status', 'error');
             }
         } catch (error) {
-            console.error(error);
+            showToast('An error occurred', 'error');
         }
     };
 
     const handleChangeRole = async (id: string, newRole: string) => {
-        if (!confirm(`Change user role to ${newRole}?`)) return;
+        const confirmed = await showConfirm({
+            title: 'Change User Role',
+            message: `Change user role to ${newRole}?`,
+        });
+        if (!confirmed) return;
         
         try {
             const res = await fetch(`/api/admin/users/${id}`, {
@@ -79,29 +94,37 @@ export default function UsersPage() {
                 body: JSON.stringify({ role: newRole })
             });
             if (res.ok) {
+                showToast(`Role updated to ${newRole}`, 'success');
                 fetchUsers();
             } else {
-                alert('Failed to update user role');
+                showToast('Failed to update user role', 'error');
             }
         } catch (error) {
-            console.error(error);
+            showToast('An error occurred', 'error');
         }
     };
 
     const handleDeleteUser = async (id: string) => {
-        if (!confirm('Are you absolutely sure you want to delete this user? This cannot be undone.')) return;
+        const confirmed = await showConfirm({
+            title: 'Delete User',
+            message: 'Are you absolutely sure you want to delete this user? This cannot be undone.',
+            danger: true,
+            confirmText: 'Delete Permanently'
+        });
+        if (!confirmed) return;
         
         try {
             const res = await fetch(`/api/admin/users/${id}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
+                showToast('User deleted successfully', 'success');
                 fetchUsers();
             } else {
-                alert('Failed to delete user');
+                showToast('Failed to delete user', 'error');
             }
         } catch (error) {
-            console.error(error);
+            showToast('An error occurred', 'error');
         }
     };
 

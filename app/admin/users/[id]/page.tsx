@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
+import { useToast } from '@/components/ToastProvider';
 
 interface UserDetail {
     id: string;
@@ -22,6 +23,7 @@ interface UserDetail {
 }
 
 export default function UserDetailPage({ params }: { params: { id: string } }) {
+    const { showToast, showConfirm } = useToast();
     const [user, setUser] = useState<UserDetail | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -44,7 +46,16 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
     const handleUpdateStatus = async () => {
         if (!user) return;
         const newStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-        if (!confirm(`Are you sure you want to ${newStatus === 'ACTIVE' ? 'activate' : 'suspend'} this user?`)) return;
+        const action = newStatus === 'ACTIVE' ? 'activate' : 'suspend';
+        
+        const confirmed = await showConfirm({
+            title: `${action === 'activate' ? 'Activate' : 'Suspend'} User`,
+            message: `Are you sure you want to ${action} this user?`,
+            danger: action === 'suspend',
+            confirmText: action === 'activate' ? 'Yes, Activate' : 'Yes, Suspend'
+        });
+        
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/api/admin/users/${user.id}`, {
@@ -53,17 +64,18 @@ export default function UserDetailPage({ params }: { params: { id: string } }) {
                 body: JSON.stringify({ status: newStatus })
             });
             if (res.ok) {
+                showToast(`User ${action === 'activate' ? 'activated' : 'suspended'}`, 'success');
                 fetchUser();
             } else {
-                alert('Failed to update status');
+                showToast('Failed to update status', 'error');
             }
         } catch (error) {
-            console.error(error);
+            showToast('An error occurred', 'error');
         }
     };
 
     const handleResetPassword = async () => {
-        alert('Reset password functionality would send a link or reset to a default password. (API endpoint not yet implemented)');
+        showToast('Fitur reset password belum diimplementasikan.', 'info');
     };
 
     if (loading) return <div className="p-8 text-neutral-400">Loading user profile...</div>;

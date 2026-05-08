@@ -163,7 +163,6 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if user has permission to delete
         if (session.user.role === 'VIEWER') {
             return NextResponse.json(
                 { error: 'Forbidden: Viewers cannot delete transactions' },
@@ -173,7 +172,7 @@ export async function DELETE(
 
         const params = await context.params;
 
-        // Get transaction data for audit log before deleting
+        // Try to find in regular transactions first
         const transaction = await prisma.transaction.findFirst({
             where: {
                 id: params.id,
@@ -181,47 +180,46 @@ export async function DELETE(
             },
         });
 
-        if (!transaction) {
+        if (transaction) {
+            // Restore wallet balance if transaction is linked to a wallet
+            await WalletService.reverseTransactionImpact(session.user.id, params.id);
+
+            // Delete regular transaction
+            await prisma.transaction.delete({
+                where: { id: params.id },
+            });
+
+            // Audit log
+            try {
+                await AuditLogger.logDelete(session.user.id, 'Transaction', transaction.id, {
+                    date: transaction.date,
+                    category: transaction.category,
+                    amount: Number(transaction.amount),
+                    type: transaction.type
+                }, request);
+            } catch (auditError) {
+                console.error('Audit log error:', auditError);
+            }
+
+            return NextResponse.json({
+                success: true,
+                message: 'Transaction deleted successfully'
+            });
+        }
+
+        // If not found in regular transactions, check WalletTransactions (internal moves)
+        try {
+            await WalletService.deleteWalletTransaction(session.user.id, params.id);
+            return NextResponse.json({
+                success: true,
+                message: 'Wallet transaction deleted successfully'
+            });
+        } catch (walletErr) {
             return NextResponse.json(
                 { error: 'Transaction not found' },
                 { status: 404 }
             );
         }
-
-        // Restore wallet balance if transaction is linked to a wallet
-        await WalletService.reverseTransactionImpact(session.user.id, params.id);
-
-        // Delete ONLY this single transaction by unique ID
-        await prisma.transaction.delete({
-            where: {
-                id: params.id,
-            },
-        });
-
-        // Log the deletion in audit log
-        try {
-            await AuditLogger.logDelete(
-                session.user.id,
-                'Transaction',
-                transaction.id,
-                {
-                    date: transaction.date,
-                    category: transaction.category,
-                    amount: Number(transaction.amount),
-                    type: transaction.type,
-                    description: transaction.description,
-                },
-                request
-            );
-        } catch (auditError) {
-            console.error('Audit log error:', auditError);
-            // Continue even if audit fails
-        }
-
-        return NextResponse.json({
-            success: true,
-            message: 'Transaction deleted successfully'
-        });
     } catch (error) {
         console.error('Error deleting transaction:', error);
         return NextResponse.json(

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { DataTable } from '@/components/admin/DataTable';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
+import { useToast } from '@/components/ToastProvider';
 
 interface Broadcast {
     id: string;
@@ -13,6 +14,7 @@ interface Broadcast {
 }
 
 export default function NotificationsPage() {
+    const { showToast } = useToast();
     const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -57,14 +59,14 @@ export default function NotificationsPage() {
                 setTitle('');
                 setMessage('');
                 fetchBroadcasts();
-                alert('Broadcast sent successfully!');
+                showToast('Broadcast sent successfully!', 'success');
             } else {
                 const errorData = await res.json();
-                alert(`Failed to send broadcast: ${errorData.error || 'Unknown error'}`);
+                showToast(`Failed to send broadcast: ${errorData.error || 'Unknown error'}`, 'error');
             }
         } catch (error) {
             console.error('Failed to send broadcast:', error);
-            alert('An error occurred while sending the broadcast. Please check your connection.');
+            showToast('An error occurred while sending the broadcast.', 'error');
         } finally {
             setSending(false);
         }

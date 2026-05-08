@@ -7,8 +7,10 @@ import { WalletCard } from '@/components/wallet/WalletCard';
 import { WalletHistoryView } from '@/components/wallet/WalletHistoryView';
 import { Plus, X, ArrowRight, Wallet as WalletIcon, RefreshCw, Loader2, MoreVertical, Search } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useToast } from '@/components/ToastProvider';
 
 export default function WalletPage() {
+    const { showToast, showConfirm } = useToast();
     const [wallets, setWallets] = useState<any[]>([]);
     const [mainBalance, setMainBalance] = useState(0);
     const [availableBalance, setAvailableBalance] = useState(0);
@@ -143,18 +145,25 @@ export default function WalletPage() {
 
     const handleDeleteWallet = async () => {
         if (!selectedWallet) {
-            alert('No wallet selected');
+            showToast('No wallet selected', 'warning');
             return;
         }
         
         const confirmMsg = `Hapus pocket "${selectedWallet.name}"? Saldo ${formatCurrency(selectedWallet.balance)} akan dikembalikan ke Saldo Utama.`;
-        if (!confirm(confirmMsg)) return;
+        const confirmed = await showConfirm({
+            title: 'Hapus Pocket',
+            message: confirmMsg,
+            danger: true,
+            confirmText: 'Ya, Hapus',
+            cancelText: 'Batal'
+        });
+        
+        if (!confirmed) return;
 
         setActionLoading(true);
         setError(null);
 
         try {
-            console.log('Sending DELETE request for:', selectedWallet.id);
             const res = await fetch(`/api/wallets/${selectedWallet.id}`, {
                 method: 'DELETE'
             });
@@ -165,11 +174,10 @@ export default function WalletPage() {
             await fetchWallets();
             setModalType(null);
             resetForm();
-            alert('Pocket berhasil dihapus');
+            showToast('Pocket berhasil dihapus', 'success');
         } catch (err: any) {
-            console.error('Delete failed:', err);
             setError(err.message);
-            alert('Gagal menghapus pocket: ' + err.message);
+            showToast('Gagal menghapus pocket: ' + err.message, 'error');
         } finally {
             setActionLoading(false);
         }

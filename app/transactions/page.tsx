@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/Navbar';
+import { useToast } from '@/components/ToastProvider';
 import { formatCurrency, formatDateTime, getLocalDatetime } from '@/lib/utils';
 import { CurrencyInput } from '@/components/CurrencyInput';
 
@@ -29,8 +30,11 @@ interface Wallet {
 export default function TransactionsPage() {
     const router = useRouter();
     const { data: session } = useSession();
+    const { showToast, showConfirm } = useToast();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -54,7 +58,7 @@ export default function TransactionsPage() {
     useEffect(() => {
         fetchTransactions();
         fetchWallets();
-    }, []);
+    }, [currentPage]); // Re-fetch when page changes
 
     const fetchWallets = async () => {
         try {
@@ -68,15 +72,34 @@ export default function TransactionsPage() {
 
     const fetchTransactions = async () => {
         try {
-            const res = await fetch('/api/transactions');
+            setLoading(true);
+            const query = new URLSearchParams({
+                page: currentPage.toString(),
+                limit: '10',
+                search: searchQuery,
+                type: typeFilter
+            });
+            const res = await fetch(`/api/transactions?${query.toString()}`);
             const data = await res.json();
             setTransactions(data.transactions || []);
+            if (data.pagination) {
+                setTotalPages(data.pagination.totalPages);
+            }
         } catch (error) {
             console.error('Error fetching transactions:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    // Trigger fetch on filter change
+    useEffect(() => {
+        if (currentPage !== 1) {
+            setCurrentPage(1);
+        } else {
+            fetchTransactions();
+        }
+    }, [searchQuery, typeFilter]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -106,10 +129,11 @@ export default function TransactionsPage() {
                     description: '',
                     walletId: '',
                 });
+                showToast('Transaksi berhasil disimpan', 'success');
                 fetchTransactions();
             } else {
                 const errorData = await res.json();
-                alert(errorData.error || 'Gagal menyimpan transaksi');
+                showToast(errorData.error || 'Gagal menyimpan transaksi', 'error');
             }
         } catch (error) {
             console.error('Error saving transaction:', error);
@@ -129,8 +153,13 @@ export default function TransactionsPage() {
         setShowForm(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Hapus transaksi ini?')) return;
+    const handleDelete = async (id: string, isWallet?: boolean) => {
+        const confirmed = await showConfirm({
+            title: 'Hapus Transaksi',
+            message: 'Hapus transaksi ini?',
+            danger: true
+        });
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/api/transactions/${id}`, {
@@ -138,16 +167,26 @@ export default function TransactionsPage() {
             });
 
             if (res.ok) {
+                showToast('Transaksi dihapus', 'success');
                 fetchTransactions();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Gagal menghapus', 'error');
             }
         } catch (error) {
             console.error('Error deleting transaction:', error);
+            showToast('Terjadi kesalahan saat menghapus', 'error');
         }
     };
 
     const handleBulkDelete = async () => {
         if (selectedIds.length === 0) return;
-        if (!confirm(`Hapus ${selectedIds.length} transaksi terpilih?`)) return;
+        const confirmed = await showConfirm({
+            title: 'Hapus Massal',
+            message: `Hapus ${selectedIds.length} transaksi terpilih?`,
+            danger: true
+        });
+        if (!confirmed) return;
 
         try {
             const res = await fetch('/api/transactions', {
@@ -158,14 +197,15 @@ export default function TransactionsPage() {
 
             if (res.ok) {
                 setSelectedIds([]);
+                showToast(`${selectedIds.length} transaksi berhasil dihapus`, 'success');
                 fetchTransactions();
             } else {
                 const error = await res.json();
-                alert(error.error || 'Gagal menghapus transaksi');
+                showToast(error.error || 'Gagal menghapus transaksi', 'error');
             }
         } catch (error) {
             console.error('Error in bulk delete:', error);
-            alert('Terjadi kesalahan saat menghapus transaksi');
+            showToast('Terjadi kesalahan saat menghapus transaksi', 'error');
         }
     };
 
@@ -449,90 +489,110 @@ export default function TransactionsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {transactions
-                                        .filter(tx => {
-                                            const matchesSearch = !searchQuery || 
-                                                tx.category.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                                (tx.description && tx.description.toLowerCase().includes(searchQuery.toLowerCase()));
-                                            const matchesType = !typeFilter || tx.type === typeFilter;
-                                            return matchesSearch && matchesType;
-                                        })
-                                        .sort((a, b) => {
-                                            const aValue = a[sortConfig.key];
-                                            const bValue = b[sortConfig.key];
-                                            
-                                            if (aValue === bValue) return 0;
-                                            
-                                            if (sortConfig.direction === 'asc') {
-                                                return aValue! < bValue! ? -1 : 1;
-                                            } else {
-                                                return aValue! > bValue! ? -1 : 1;
-                                            }
-                                        })
-                                        .map((tx) => (
-                                        <tr key={tx.id} className="hover:bg-gray-50">
-                                            {session?.user?.role !== 'VIEWER' && (
-                                                <td className="px-6 py-4 whitespace-nowrap w-12">
-                                                    <input
-                                                        type="checkbox"
-                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                        checked={selectedIds.includes(tx.id)}
-                                                        onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setSelectedIds([...selectedIds, tx.id]);
-                                                            } else {
-                                                                setSelectedIds(selectedIds.filter(id => id !== tx.id));
-                                                            }
-                                                        }}
-                                                    />
-                                                </td>
-                                            )}
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {formatDateTime(tx.date)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {tx.category}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${tx.type === 'INCOME' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                    }`}>
-                                                    {tx.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}
-                                                </span>
-                                            </td>
-                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
-                                                }`}>
-                                                {formatCurrency(tx.amount)}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                                                {tx.description || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                                {session?.user?.role !== 'VIEWER' && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => handleEdit(tx)}
-                                                            className="text-blue-600 hover:text-blue-900 mr-4"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDelete(tx.id)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Hapus
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {session?.user?.role === 'VIEWER' && (
-                                                    <span className="text-gray-400">-</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {transactions.map((tx: any) => (
+                                         <tr key={tx.id} className="hover:bg-gray-50">
+                                             {session?.user?.role !== 'VIEWER' && (
+                                                 <td className="px-6 py-4 whitespace-nowrap w-12">
+                                                     <input
+                                                         type="checkbox"
+                                                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                         checked={selectedIds.includes(tx.id)}
+                                                         onChange={(e) => {
+                                                             if (e.target.checked) {
+                                                                 setSelectedIds([...selectedIds, tx.id]);
+                                                             } else {
+                                                                 setSelectedIds(selectedIds.filter(id => id !== tx.id));
+                                                             }
+                                                         }}
+                                                     />
+                                                 </td>
+                                             )}
+                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                 {formatDateTime(tx.date)}
+                                             </td>
+                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                 <div className="flex flex-col">
+                                                     <span>{tx.category}</span>
+                                                     {tx.wallet && (
+                                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                                                             Pocket: {tx.wallet.name}
+                                                         </span>
+                                                     )}
+                                                     {tx.isWalletTransaction && (
+                                                         <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mt-0.5">
+                                                             Wallet Move
+                                                         </span>
+                                                     )}
+                                                 </div>
+                                             </td>
+                                             <td className="px-6 py-4 whitespace-nowrap">
+                                                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${tx.type === 'INCOME' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                     }`}>
+                                                     {tx.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}
+                                                 </span>
+                                             </td>
+                                             <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${tx.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                                                 }`}>
+                                                 {formatCurrency(tx.amount)}
+                                             </td>
+                                             <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                                 {tx.description || '-'}
+                                             </td>
+                                             <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                                 {session?.user?.role !== 'VIEWER' && (
+                                                     <>
+                                                         {!tx.isWalletTransaction && (
+                                                            <button
+                                                                onClick={() => handleEdit(tx)}
+                                                                className="text-blue-600 hover:text-blue-900 mr-4"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                         )}
+                                                         <button
+                                                             onClick={() => handleDelete(tx.id)}
+                                                             className="text-red-600 hover:text-red-900"
+                                                         >
+                                                             Hapus
+                                                         </button>
+                                                     </>
+                                                 )}
+                                                 {session?.user?.role === 'VIEWER' && (
+                                                     <span className="text-gray-400">-</span>
+                                                 )}
+                                             </td>
+                                         </tr>
+                                     ))}
                                 </tbody>
                             </table>
                         </div>
                     )}
+
+                    {/* Pagination Controls */}
+                    {!loading && totalPages > 1 && (
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                            <div className="text-sm text-gray-500">
+                                Menampilkan Halaman <span className="font-medium text-gray-900">{currentPage}</span> dari <span className="font-medium text-gray-900">{totalPages}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Sebelumnya
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Selanjutnya
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </main>
         </div>

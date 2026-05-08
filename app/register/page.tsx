@@ -2,12 +2,14 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ToastProvider';
 import Link from 'next/link';
 import { PasswordInput } from '@/components/PasswordInput';
 import { registerUser } from '@/app/actions/auth';
 
 export default function RegisterPage() {
     const router = useRouter();
+    const { showToast, showConfirm } = useToast();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -45,8 +47,7 @@ export default function RegisterPage() {
             if (result?.error) {
                 setErrors({ general: result.error });
             } else if (result?.success) {
-                // Gunakan notifikasi toast di masa depan, untuk sekarang alert ok
-                alert('Pendaftaran berhasil! Silakan login.');
+                showToast('Pendaftaran berhasil! Silakan login.', 'success');
                 router.push('/login');
             }
         } catch (error) {

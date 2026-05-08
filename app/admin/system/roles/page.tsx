@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useToast } from '@/components/ToastProvider';
 
 const roles = [
     {
@@ -27,6 +28,7 @@ const roles = [
 ];
 
 export default function RolesPermissionsPage() {
+    const { showToast } = useToast();
     return (
         <div className="space-y-10">
             <div>
@@ -60,7 +62,7 @@ export default function RolesPermissionsPage() {
                         </div>
 
                         <button 
-                            onClick={() => alert('Role scope management is an enterprise feature coming soon.')}
+                            onClick={() => showToast('Fitur Enterprise: Role scope management segera hadir.', 'info')}
                             className="mt-8 w-full py-3 bg-neutral-900 text-white text-[10px] font-black rounded-xl hover:bg-neutral-800 transition-all uppercase tracking-[0.2em]"
                         >
                             Manage Scope
@@ -69,7 +71,7 @@ export default function RolesPermissionsPage() {
                 ))}
 
                 <div 
-                    onClick={() => alert('Custom role creation is currently locked.')}
+                    onClick={() => showToast('Fitur Enterprise: Pembuatan role custom saat ini terkunci.', 'info')}
                     className="bg-neutral-50 p-8 rounded-2xl border border-dashed border-neutral-200 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-emerald-300 transition-all"
                 >
                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-neutral-400 group-hover:text-emerald-500 shadow-sm transition-all mb-4">

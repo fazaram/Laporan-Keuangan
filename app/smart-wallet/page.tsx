@@ -8,7 +8,7 @@ import { CurrencyInput } from '@/components/CurrencyInput';
 import { useToast } from '@/components/ToastProvider';
 
 export default function SmartWalletPage() {
-    const { showToast } = useToast();
+    const { showToast, showConfirm } = useToast();
     const [wallets, setWallets] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddingWallet, setIsAddingWallet] = useState(false);
@@ -80,7 +80,12 @@ export default function SmartWalletPage() {
     };
 
     const handleReset = async (resetBudget: boolean) => {
-        if (!confirm(`Apakah Anda yakin ingin mereset ${resetBudget ? 'Anggaran & Pengeluaran' : 'Pengeluaran'} semua wallet?`)) return;
+        const confirmed = await showConfirm({
+            title: 'Reset Wallet',
+            message: `Apakah Anda yakin ingin mereset ${resetBudget ? 'Anggaran & Pengeluaran' : 'Pengeluaran'} semua wallet?`,
+            danger: true
+        });
+        if (!confirmed) return;
         
         try {
             const response = await fetch('/api/wallets/reset', {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { 
     X, ArrowLeft, Search, Plus, ArrowUpRight, Send, 
-    Calendar, MoreHorizontal, Copy, Link2, Info, Loader2
+    Calendar, MoreHorizontal, Copy, Link2, Info, Loader2, Trash2, AlertCircle
 } from 'lucide-react';
 
 interface WalletHistoryViewProps {
@@ -27,6 +27,7 @@ export function WalletHistoryView({ wallet, allWallets, availableBalance, onClos
     const [targetId, setTargetId] = useState(''); // For TRANSFER
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const fetchHistory = async () => {
         try {
@@ -44,6 +45,31 @@ export function WalletHistoryView({ wallet, allWallets, availableBalance, onClos
     useEffect(() => {
         fetchHistory();
     }, [wallet.id]);
+
+    const handleDelete = async (item: any) => {
+        if (!confirm('Hapus transaksi ini? Saldo akan dikembalikan secara otomatis.')) return;
+        
+        try {
+            setDeletingId(item.id);
+            const endpoint = item.isInternal 
+                ? `/api/wallets/transactions/${item.id}` 
+                : `/api/transactions/${item.id}`;
+
+            const res = await fetch(endpoint, {
+                method: 'DELETE'
+            });
+            
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            
+            onRefresh(); // Refresh wallets in parent
+            fetchHistory(); // Refresh local history
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     const handleAction = async () => {
         if (!amount || isNaN(Number(amount))) return;
@@ -270,7 +296,12 @@ export function WalletHistoryView({ wallet, allWallets, availableBalance, onClos
                                             </div>
                                             <div className="space-y-2">
                                                 {items.map((item: any) => (
-                                                    <HistoryItem key={item.id} item={item} />
+                                                    <HistoryItem 
+                                                        key={item.id} 
+                                                        item={item} 
+                                                        onDelete={() => handleDelete(item)}
+                                                        isDeleting={deletingId === item.id}
+                                                    />
                                                 ))}
                                             </div>
                                         </div>
@@ -313,31 +344,45 @@ function QuickActionButton({ icon, label, color, onClick }: { icon: any, label: 
     );
 }
 
-function HistoryItem({ item }: { item: any }) {
+function HistoryItem({ item, onDelete, isDeleting }: { item: any, onDelete: () => void, isDeleting: boolean }) {
     const isPositive = item.isPositive;
     const date = new Date(item.date);
     const day = date.getDate();
     const month = date.toLocaleString('default', { month: 'short' });
 
     return (
-        <div className="bg-white p-5 rounded-[2rem] flex items-center justify-between hover:shadow-[0_15px_35px_rgba(0,0,0,0.05)] transition-all duration-500 group border border-transparent hover:border-gray-50">
+        <div className="bg-white p-5 rounded-[2rem] flex items-center justify-between hover:shadow-[0_15px_35px_rgba(0,0,0,0.05)] transition-all duration-500 group border border-transparent hover:border-gray-50 relative overflow-hidden">
             <div className="flex items-center gap-5">
                 <div className="w-14 h-14 bg-gray-50 rounded-[1.5rem] flex items-center justify-center text-2xl group-hover:bg-gray-900 group-hover:text-white transition-all duration-500 shadow-inner">
                     {item.type === 'TRANSFER' ? '🔄' : item.type === 'TOPUP' ? '💰' : item.type === 'WITHDRAW' ? '🏧' : '📉'}
                 </div>
                 <div>
-                    <h4 className="font-black text-gray-900 leading-tight tracking-tight mb-1">{item.description}</h4>
+                    <div className="flex items-center gap-2">
+                        <h4 className="font-black text-gray-900 leading-tight tracking-tight">{item.description}</h4>
+                        {isDeleting && <Loader2 size={12} className="animate-spin text-gray-400" />}
+                    </div>
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{day} {month} • {item.isInternal ? 'Pocket Move' : 'External'}</p>
                 </div>
             </div>
-            <div className="text-right">
-                <p className={`font-black text-xl tracking-tighter ${isPositive ? 'text-green-600' : 'text-gray-900'}`}>
-                    {isPositive ? '+' : '-'}{formatCurrency(item.amount)}
-                </p>
-                <div className="flex items-center justify-end gap-1.5 mt-1">
-                    <div className={`w-1.5 h-1.5 rounded-full ${isPositive ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-tighter">Verified</p>
+            
+            <div className="flex items-center gap-6">
+                <div className="text-right">
+                    <p className={`font-black text-xl tracking-tighter ${isPositive ? 'text-green-600' : 'text-gray-900'}`}>
+                        {isPositive ? '+' : '-'}{formatCurrency(item.amount)}
+                    </p>
+                    <div className="flex items-center justify-end gap-1.5 mt-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${isPositive ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-tighter">Verified</p>
+                    </div>
                 </div>
+
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    disabled={isDeleting}
+                    className="p-3 bg-red-50 text-red-400 rounded-2xl opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all active:scale-90 disabled:opacity-30"
+                >
+                    <Trash2 size={18} />
+                </button>
             </div>
         </div>
     );

@@ -212,6 +212,102 @@ export class WalletService {
         });
     }
 
+    /**
+     * Deletes a wallet transaction and reverses its impact on wallet balances.
+     */
+    static async deleteWalletTransaction(userId: string, transactionId: string) {
+        const transaction = await prisma.walletTransaction.findFirst({
+            where: { id: transactionId, userId }
+        });
+
+        if (!transaction) {
+            throw new Error('Transaksi wallet tidak ditemukan');
+        }
+
+        return prisma.$transaction(async (tx) => {
+            if (transaction.type === 'TOPUP' && transaction.toWalletId) {
+                // Reverse top up: decrement wallet balance
+                await tx.wallet.update({
+                    where: { id: transaction.toWalletId },
+                    data: { balance: { decrement: transaction.amount } }
+                });
+            } else if (transaction.type === 'WITHDRAW' && transaction.fromWalletId) {
+                // Reverse withdraw: increment wallet balance
+                await tx.wallet.update({
+                    where: { id: transaction.fromWalletId },
+                    data: { balance: { increment: transaction.amount } }
+                });
+            } else if (transaction.type === 'TRANSFER' && transaction.fromWalletId && transaction.toWalletId) {
+                // Reverse transfer: increment source, decrement destination
+                await tx.wallet.update({
+                    where: { id: transaction.fromWalletId },
+                    data: { balance: { increment: transaction.amount } }
+                });
+                await tx.wallet.update({
+                    where: { id: transaction.toWalletId },
+                    data: { balance: { decrement: transaction.amount } }
+                });
+            }
+
+            await tx.walletTransaction.delete({
+                where: { id: transactionId }
+            });
+        });
+    }
+
+    /**
+     * Reverses the impact of an external transaction on a wallet's balance.
+     * Should be called BEFORE the transaction is deleted.
+     */
+    static async reverseTransactionImpact(userId: string, transactionId: string) {
+        const transaction = await prisma.transaction.findFirst({
+            where: { id: transactionId, userId }
+        });
+
+        if (!transaction || !transaction.walletId) return;
+
+        const walletId = transaction.walletId;
+        const amount = Number(transaction.amount);
+
+        if (transaction.type === 'EXPENSE') {
+            // Restore wallet balance and decrease spentAmount
+            await prisma.wallet.update({
+                where: { id: walletId },
+                data: {
+                    balance: { increment: amount },
+                    spentAmount: { decrement: amount }
+                }
+            });
+        } else if (transaction.type === 'INCOME') {
+            // Decrease wallet balance
+            await prisma.wallet.update({
+                where: { id: walletId },
+                data: {
+                    balance: { decrement: amount }
+                }
+            });
+        }
+    }
+
+    /**
+     * Deletes a wallet.
+     * Note: In this system, deleting a wallet automatically returns its balance to the main balance
+     * because Main Balance = Total Income - Total Expense - Sum(Wallet Balances).
+     */
+    static async deleteWallet(userId: string, walletId: string) {
+        const wallet = await prisma.wallet.findFirst({
+            where: { id: walletId, userId }
+        });
+
+        if (!wallet) {
+            throw new Error('Pocket tidak ditemukan');
+        }
+
+        return prisma.wallet.delete({
+            where: { id: walletId }
+        });
+    }
+
     static async resetMonthly(userId: string, resetBudget: boolean = false) {
         return prisma.wallet.updateMany({
             where: { userId },

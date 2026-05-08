@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { AuditLogger } from '@/lib/audit/logger';
 import { MAX_ALLOWED_AMOUNT } from '@/lib/utils';
+import { WalletService } from '@/lib/services/wallet-service';
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,9 @@ export async function DELETE(
                 { status: 404 }
             );
         }
+
+        // Restore wallet balance if transaction is linked to a wallet
+        await WalletService.reverseTransactionImpact(session.user.id, params.id);
 
         // Delete ONLY this single transaction by unique ID
         await prisma.transaction.delete({

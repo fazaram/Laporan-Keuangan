@@ -141,6 +141,40 @@ export default function WalletPage() {
         }
     };
 
+    const handleDeleteWallet = async () => {
+        if (!selectedWallet) {
+            alert('No wallet selected');
+            return;
+        }
+        
+        const confirmMsg = `Hapus pocket "${selectedWallet.name}"? Saldo ${formatCurrency(selectedWallet.balance)} akan dikembalikan ke Saldo Utama.`;
+        if (!confirm(confirmMsg)) return;
+
+        setActionLoading(true);
+        setError(null);
+
+        try {
+            console.log('Sending DELETE request for:', selectedWallet.id);
+            const res = await fetch(`/api/wallets/${selectedWallet.id}`, {
+                method: 'DELETE'
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            await fetchWallets();
+            setModalType(null);
+            resetForm();
+            alert('Pocket berhasil dihapus');
+        } catch (err: any) {
+            console.error('Delete failed:', err);
+            setError(err.message);
+            alert('Gagal menghapus pocket: ' + err.message);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const openCreate = () => {
         resetForm();
         setModalType('CREATE');
@@ -421,6 +455,17 @@ export default function WalletPage() {
                                         </>
                                     )}
                                 </button>
+
+                                {modalType === 'EDIT' && (
+                                    <button 
+                                        type="button"
+                                        onClick={handleDeleteWallet}
+                                        disabled={actionLoading}
+                                        className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-4"
+                                    >
+                                        Hapus Pocket
+                                    </button>
+                                )}
                             </form>
                         </div>
                     </div>

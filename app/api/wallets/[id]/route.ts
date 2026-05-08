@@ -5,9 +5,10 @@ import { prisma } from '@/lib/db';
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: any }
 ) {
     try {
+        const params = await context.params;
         const session = await getServerSession(authOptions);
         if (!session || !session.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -58,16 +59,20 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: any }
 ) {
     try {
+        console.log('[DELETE Wallet] Hit');
         const session = await getServerSession(authOptions);
+        console.log('[DELETE Wallet] Session:', session?.user?.email);
+        
         if (!session || !session.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Before deleting, we might want to check if balance is 0 or what to do with remaining balance.
-        // For now, let's just delete it. The balance effectively "returns" to available because Available = Main - sum(Wallets).
+        const params = await context.params;
+        console.log('[DELETE Wallet] Params ID:', params?.id);
+
         await prisma.wallet.delete({
             where: { 
                 id: params.id,

@@ -15,7 +15,14 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { name, icon, color } = body;
+        const { 
+            name, 
+            icon, 
+            color,
+            autoAllocateEnabled,
+            autoAllocateDay,
+            autoAllocateAmount
+        } = body;
 
         if (name) {
             const existingWallet = await prisma.wallet.findFirst({
@@ -39,7 +46,10 @@ export async function PATCH(
             data: {
                 ...(name && { name }),
                 ...(icon && { icon }),
-                ...(color && { color })
+                ...(color && { color }),
+                autoAllocateEnabled: autoAllocateEnabled !== undefined ? Boolean(autoAllocateEnabled) : undefined,
+                autoAllocateDay: autoAllocateDay !== undefined ? (autoAllocateDay ? parseInt(autoAllocateDay) : null) : undefined,
+                autoAllocateAmount: autoAllocateAmount !== undefined ? (autoAllocateAmount ? parseFloat(autoAllocateAmount) : null) : undefined,
             }
         });
 

@@ -37,7 +37,10 @@ export default function WalletPage() {
         icon: '💰',
         color: '#3B82F6',
         amount: '',
-        toWalletId: ''
+        toWalletId: '',
+        autoAllocateEnabled: false,
+        autoAllocateDay: '',
+        autoAllocateAmount: ''
     });
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -62,8 +65,25 @@ export default function WalletPage() {
         }
     };
 
+    const triggerAutoAllocation = async () => {
+        try {
+            const res = await fetch('/api/wallets/auto-allocate', { method: 'POST' });
+            const data = await res.json();
+            if (data.processed > 0) {
+                showToast(`Berhasil alokasi otomatis untuk ${data.processed} pocket`, 'success');
+                fetchWallets();
+            }
+            if (data.errors?.length > 0) {
+                data.errors.forEach((err: string) => showToast(err, 'error'));
+            }
+        } catch (err) {
+            console.error('Failed to trigger auto allocation:', err);
+        }
+    };
+
     useEffect(() => {
         fetchWallets();
+        triggerAutoAllocation();
     }, []);
 
     const resetForm = () => {
@@ -72,7 +92,10 @@ export default function WalletPage() {
             icon: '💰',
             color: '#3B82F6',
             amount: '',
-            toWalletId: ''
+            toWalletId: '',
+            autoAllocateEnabled: false,
+            autoAllocateDay: '',
+            autoAllocateAmount: ''
         });
         setError(null);
     };
@@ -94,7 +117,10 @@ export default function WalletPage() {
                         name: formData.name, 
                         icon: formData.icon, 
                         color: formData.color,
-                        initialAmount: formData.amount 
+                        initialAmount: formData.amount,
+                        autoAllocateEnabled: formData.autoAllocateEnabled,
+                        autoAllocateDay: formData.autoAllocateDay,
+                        autoAllocateAmount: formData.autoAllocateAmount
                     };
                     break;
                 case 'EDIT':
@@ -103,7 +129,10 @@ export default function WalletPage() {
                     body = { 
                         name: formData.name, 
                         icon: formData.icon, 
-                        color: formData.color 
+                        color: formData.color,
+                        autoAllocateEnabled: formData.autoAllocateEnabled,
+                        autoAllocateDay: formData.autoAllocateDay,
+                        autoAllocateAmount: formData.autoAllocateAmount
                     };
                     break;
                 case 'TOPUP':
@@ -194,7 +223,10 @@ export default function WalletPage() {
             icon: wallet.icon || '💰',
             color: wallet.color || '#3B82F6',
             amount: '',
-            toWalletId: ''
+            toWalletId: '',
+            autoAllocateEnabled: wallet.autoAllocateEnabled || false,
+            autoAllocateDay: wallet.autoAllocateDay?.toString() || '',
+            autoAllocateAmount: wallet.autoAllocateAmount?.toString() || ''
         });
         setSelectedWallet(wallet);
         setModalType('EDIT');
@@ -359,6 +391,55 @@ export default function WalletPage() {
                                                     ></button>
                                                 ))}
                                             </div>
+                                        </div>
+
+                                        {/* Auto Allocation Settings */}
+                                        <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h4 className="font-bold text-blue-900 flex items-center gap-2">
+                                                        <RefreshCw size={16} className={formData.autoAllocateEnabled ? 'animate-spin-slow' : ''} />
+                                                        Alokasi Otomatis
+                                                    </h4>
+                                                    <p className="text-xs text-blue-700/70">Top up otomatis dari Saldo Utama</p>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, autoAllocateEnabled: !formData.autoAllocateEnabled })}
+                                                    className={`w-12 h-6 rounded-full transition-all relative ${formData.autoAllocateEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                                                >
+                                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${formData.autoAllocateEnabled ? 'left-7' : 'left-1'}`}></div>
+                                                </button>
+                                            </div>
+
+                                            {formData.autoAllocateEnabled && (
+                                                <div className="grid grid-cols-2 gap-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-blue-900/50 uppercase tracking-widest mb-1.5">Tanggal (1-31)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            min="1"
+                                                            max="31"
+                                                            required={formData.autoAllocateEnabled}
+                                                            value={formData.autoAllocateDay}
+                                                            onChange={(e) => setFormData({ ...formData, autoAllocateDay: e.target.value })}
+                                                            placeholder="Contoh: 25"
+                                                            className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-bold"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-black text-blue-900/50 uppercase tracking-widest mb-1.5">Jumlah (Rp)</label>
+                                                        <input 
+                                                            type="number" 
+                                                            required={formData.autoAllocateEnabled}
+                                                            value={formData.autoAllocateAmount}
+                                                            onChange={(e) => setFormData({ ...formData, autoAllocateAmount: e.target.value })}
+                                                            placeholder="0"
+                                                            className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-bold"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </>
                                 )}

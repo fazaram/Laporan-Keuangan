@@ -366,4 +366,77 @@ export class WalletService {
 
         return history;
     }
+
+    /**
+     * Processes automatic allocations for a user's wallets.
+     * Should be triggered when the user logs in or visits the wallet page.
+     */
+    static async processAutoAllocations(userId: string) {
+        const today = new Date();
+        const currentDay = today.getDate();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
+        // Find wallets with auto-allocation enabled and due for today
+        const walletsToAllocate = await prisma.wallet.findMany({
+            where: {
+                userId,
+                autoAllocateEnabled: true,
+                autoAllocateDay: currentDay,
+                OR: [
+                    { lastAutoAllocate: null },
+                    {
+                        lastAutoAllocate: {
+                            lt: new Date(currentYear, currentMonth, 1) // Before start of current month
+                        }
+                    }
+                ]
+            }
+        });
+
+        if (walletsToAllocate.length === 0) return { processed: 0, errors: [] };
+
+        const availableBalance = await this.getAvailableBalance(userId);
+        let processedCount = 0;
+        const errors: string[] = [];
+
+        for (const wallet of walletsToAllocate) {
+            const amount = Number(wallet.autoAllocateAmount || 0);
+            if (amount <= 0) continue;
+
+            if (availableBalance < amount) {
+                errors.push(`Gagal alokasi ke "${wallet.name}": Saldo utama tidak mencukupi`);
+                continue;
+            }
+
+            try {
+                await prisma.$transaction(async (tx) => {
+                    // Update wallet balance
+                    await tx.wallet.update({
+                        where: { id: wallet.id },
+                        data: {
+                            balance: { increment: amount },
+                            lastAutoAllocate: today
+                        }
+                    });
+
+                    // Create transaction log
+                    await tx.walletTransaction.create({
+                        data: {
+                            userId,
+                            toWalletId: wallet.id,
+                            amount,
+                            type: 'TOPUP',
+                            description: `Alokasi otomatis (Tanggal ${wallet.autoAllocateDay})`
+                        }
+                    });
+                });
+                processedCount++;
+            } catch (err: any) {
+                errors.push(`Gagal alokasi ke "${wallet.name}": ${err.message}`);
+            }
+        }
+
+        return { processed: processedCount, errors };
+    }
 }

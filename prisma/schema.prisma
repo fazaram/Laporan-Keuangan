@@ -180,6 +180,13 @@ model Wallet {
   balance      Decimal       @default(0) @db.Decimal(20, 2)
   budgetAmount Decimal       @default(0) @db.Decimal(20, 2)
   spentAmount  Decimal       @default(0) @db.Decimal(20, 2)
+  
+  // Auto Allocation settings
+  autoAllocateEnabled Boolean  @default(false)
+  autoAllocateDay     Int?
+  autoAllocateAmount  Decimal? @db.Decimal(20, 2)
+  lastAutoAllocate    DateTime?
+  
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -49,7 +49,15 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { name, icon, color, initialAmount } = body;
+        const { 
+            name, 
+            icon, 
+            color, 
+            initialAmount,
+            autoAllocateEnabled,
+            autoAllocateDay,
+            autoAllocateAmount
+        } = body;
 
         if (!name) {
             return NextResponse.json({ error: 'Nama wallet wajib diisi' }, { status: 400 });
@@ -83,6 +91,9 @@ export async function POST(request: NextRequest) {
                 icon: icon || null,
                 color: color || '#3B82F6',
                 balance: amount,
+                autoAllocateEnabled: Boolean(autoAllocateEnabled),
+                autoAllocateDay: autoAllocateDay ? parseInt(autoAllocateDay) : null,
+                autoAllocateAmount: autoAllocateAmount ? parseFloat(autoAllocateAmount) : null,
             }
         });
 

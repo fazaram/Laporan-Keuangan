@@ -7,6 +7,7 @@ import { Navbar } from '@/components/Navbar';
 import { useToast } from '@/components/ToastProvider';
 import { formatCurrency, formatDateTime, getLocalDatetime } from '@/lib/utils';
 import { CurrencyInput } from '@/components/CurrencyInput';
+import { Camera, Loader2, Sparkles, X } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,8 @@ export default function TransactionsPage() {
         key: keyof Transaction;
         direction: 'asc' | 'desc';
     }>({ key: 'date', direction: 'desc' });
+    const [scanLoading, setScanLoading] = useState(false);
+    const [scanImage, setScanImage] = useState<string | null>(null);
 
     const [wallets, setWallets] = useState<Wallet[]>([]);
     const [formData, setFormData] = useState({
@@ -137,6 +140,57 @@ export default function TransactionsPage() {
             }
         } catch (error) {
             console.error('Error saving transaction:', error);
+        }
+    };
+
+    const handleScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setScanLoading(true);
+            showToast('Sedang membaca struk...', 'info');
+
+            // Convert to base64
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve) => {
+                reader.onload = () => {
+                    const result = reader.result as string;
+                    setScanImage(result); // Set preview image
+                    const base64 = result.split(',')[1];
+                    resolve(base64);
+                };
+            });
+            reader.readAsDataURL(file);
+            const base64 = await base64Promise;
+
+            const res = await fetch('/api/transactions/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64 }),
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            // Auto-fill form
+            setFormData(prev => ({
+                ...prev,
+                amount: data.amount ? data.amount.toString() : prev.amount,
+                category: data.category || prev.category,
+                description: data.description || data.merchant || prev.description,
+                type: data.type || prev.type,
+                date: data.date ? `${data.date}T${new Date().toLocaleTimeString('en-GB')}` : prev.date
+            }));
+
+            showToast('Struk berhasil dibaca!', 'success');
+        } catch (error: any) {
+            console.error('Scan Error:', error);
+            showToast(error.message || 'Gagal membaca struk', 'error');
+        } finally {
+            setScanLoading(false);
+            // Reset input
+            if (e.target) e.target.value = '';
         }
     };
 
@@ -271,6 +325,7 @@ export default function TransactionsPage() {
                                         description: '',
                                         walletId: '',
                                     });
+                                    setScanImage(null);
                                 }}
                                 className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
                             >
@@ -283,11 +338,67 @@ export default function TransactionsPage() {
                 {/* Form */}
                 {showForm && (
                     <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6">
-                            {editingId ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}
-                        </h2>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-gray-900">
+                                {editingId ? 'Edit Transaksi' : 'Tambah Transaksi Baru'}
+                            </h2>
+                            {!editingId && (
+                                <div className="relative">
+                                    <input 
+                                        type="file" 
+                                        id="receipt-scan" 
+                                        className="hidden" 
+                                        accept="image/*"
+                                        onChange={handleScan}
+                                        disabled={scanLoading}
+                                    />
+                                    <label 
+                                        htmlFor="receipt-scan"
+                                        className={`flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-full text-sm font-bold cursor-pointer hover:bg-purple-100 transition-all border border-purple-100 ${scanLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {scanLoading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4 text-purple-500" />
+                                        )}
+                                        {scanLoading ? 'Membaca...' : 'Scan Struk (AI)'}
+                                    </label>
+                                </div>
+                            )}
+                        </div>
 
-                        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8">
+                            {/* Image Preview Area */}
+                            {scanImage && (
+                                <div className="w-full lg:w-1/3 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    <div className="relative rounded-2xl overflow-hidden border-2 border-purple-100 shadow-inner bg-gray-50 aspect-[3/4]">
+                                        <img 
+                                            src={scanImage} 
+                                            alt="Receipt Preview" 
+                                            className="w-full h-full object-contain"
+                                        />
+                                        {scanLoading && (
+                                            <div className="absolute inset-0 bg-purple-900/20 backdrop-blur-[2px] flex items-center justify-center">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <Loader2 className="w-10 h-10 text-white animate-spin" />
+                                                    <span className="text-white font-bold text-sm drop-shadow-md">Menganalisis...</span>
+                                                </div>
+                                                {/* Scanning Laser Effect */}
+                                                <div className="absolute top-0 left-0 w-full h-1 bg-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.8)] animate-scan-laser"></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setScanImage(null)}
+                                        className="text-xs font-bold text-red-500 hover:text-red-600 flex items-center justify-center gap-1 uppercase tracking-wider"
+                                    >
+                                        <X size={14} /> Hapus Gambar
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Tanggal & Waktu
@@ -392,7 +503,8 @@ export default function TransactionsPage() {
                                     Batal
                                 </button>
                             </div>
-                        </form>
+                        </div>
+                    </form>
                     </div>
                 )}
 

@@ -16,7 +16,17 @@ export function Navbar() {
     const navItems = [
         { href: '/dashboard', label: 'Dashboard', icon: '📊' },
         { href: '/wallet', label: 'Smart Wallet', icon: '👛' },
-        { href: '/transactions', label: 'Transaksi', icon: '💰' },
+        { 
+            href: '/transactions', 
+            label: 'Transaksi', 
+            icon: '💰',
+            subItems: [
+                { href: '/transactions', label: 'All Transactions', icon: '📋' },
+                { href: '/transactions', label: 'Add Transaction', icon: '➕' },
+                { href: '/transactions/import-excel', label: 'Import Excel', icon: '📊' },
+                { href: '/transactions/import-ocr', label: 'Import OCR (NEW)', icon: '📸' }
+            ]
+        },
         { href: '/goals', label: 'Tabungan', icon: '🎯' },
         { href: '/reports/monthly', label: 'Laporan Bulanan', icon: '📅' },
         { href: '/reports/yearly', label: 'Laporan Tahunan', icon: '📈' },
@@ -84,17 +94,39 @@ export function Navbar() {
                     {/* Desktop Navigation */}
                     <div className="hidden lg:flex items-center gap-1 xl:gap-2">
                         {filteredNavItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${pathname.startsWith(item.href)
-                                    ? 'bg-blue-50 text-blue-700'
-                                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                            <div key={item.href} className="relative group">
+                                <Link
+                                    href={item.href}
+                                    className={`px-3 py-2 rounded-lg font-semibold text-xs transition-all duration-200 flex items-center gap-2 whitespace-nowrap ${
+                                        pathname.startsWith(item.href) && (!item.subItems || pathname === item.href)
+                                        ? 'bg-blue-50 text-blue-700'
+                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                                     }`}
-                            >
-                                <span className="text-base">{item.icon}</span>
-                                <span>{item.label}</span>
-                            </Link>
+                                >
+                                    <span className="text-base">{item.icon}</span>
+                                    <span>{item.label}</span>
+                                    {item.subItems && (
+                                        <svg className="w-3 h-3 ml-1 text-gray-400 group-hover:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    )}
+                                </Link>
+                                
+                                {item.subItems && (
+                                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top translate-y-2 group-hover:translate-y-0">
+                                        {item.subItems.map((sub) => (
+                                            <Link
+                                                key={sub.label}
+                                                href={sub.href}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2"
+                                            >
+                                                <span>{sub.icon}</span>
+                                                <span>{sub.label}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </div>
 
@@ -186,17 +218,38 @@ export function Navbar() {
                 <div className="lg:hidden border-t border-gray-100 bg-white animate-in slide-in-from-top duration-300">
                     <div className="px-4 pt-2 pb-6 space-y-1">
                         {filteredNavItems.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center p-3 rounded-xl font-semibold text-sm transition-all ${pathname.startsWith(item.href)
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                                    : 'text-gray-600 hover:bg-gray-50'
+                            <div key={item.href} className="flex flex-col">
+                                <Link
+                                    href={item.href}
+                                    className={`flex items-center p-3 rounded-xl font-semibold text-sm transition-all ${
+                                        pathname.startsWith(item.href) && (!item.subItems || pathname === item.href)
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                                        : 'text-gray-600 hover:bg-gray-50'
                                     }`}
-                            >
-                                <span className="text-xl mr-3">{item.icon}</span>
-                                <span>{item.label}</span>
-                            </Link>
+                                >
+                                    <span className="text-xl mr-3">{item.icon}</span>
+                                    <span>{item.label}</span>
+                                </Link>
+                                
+                                {item.subItems && (
+                                    <div className="ml-10 mt-1 flex flex-col gap-1 border-l-2 border-gray-100 pl-3">
+                                        {item.subItems.map(sub => (
+                                            <Link
+                                                key={sub.href}
+                                                href={sub.href}
+                                                className={`flex items-center p-2 rounded-lg text-sm transition-all ${
+                                                    pathname === sub.href
+                                                    ? 'text-blue-700 bg-blue-50 font-bold'
+                                                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                <span className="mr-2">{sub.icon}</span>
+                                                {sub.label}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </div>
                 </div>

@@ -53,8 +53,8 @@ export const authOptions: AuthOptions = {
     ],
     session: {
         strategy: 'jwt',
-        maxAge: 5 * 60, // 5 minutes idle or close
-        updateAge: 60,  // Extend session cookie expiry if active
+        maxAge: 30 * 24 * 60 * 60, // 30 days session
+        updateAge: 24 * 60 * 60,   // Extend session cookie expiry daily
     },
     pages: {
         signIn: '/login',

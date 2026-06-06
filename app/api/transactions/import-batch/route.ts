@@ -17,62 +17,62 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Tidak ada transaksi untuk diimport' }, { status: 400 });
         }
 
-        if (!walletId) {
-            return NextResponse.json({ error: 'Destination wallet tidak valid' }, { status: 400 });
+        let wallet = null;
+        if (walletId) {
+            // Verify that the wallet belongs to the user
+            wallet = await prisma.wallet.findFirst({
+                where: {
+                    id: walletId,
+                    userId: session.user.id
+                }
+            });
+
+            if (!wallet) {
+                return NextResponse.json({ error: 'Wallet tidak ditemukan atau bukan milik Anda' }, { status: 404 });
+            }
         }
 
-        // Verify that the wallet belongs to the user
-        const wallet = await prisma.wallet.findFirst({
-            where: {
-                id: walletId,
-                userId: session.user.id
+        let totalIncome = 0;
+        let totalExpense = 0;
+
+        const transactionsToCreate = transactions.map((t: any) => {
+            const amount = parseFloat(t.amount);
+            
+            if (t.type === 'INCOME') totalIncome += amount;
+            else if (t.type === 'EXPENSE') totalExpense += amount;
+
+            // Safely parse date or fallback to today
+            let parsedDate = new Date();
+            if (t.date) {
+                const tempDate = new Date(t.date);
+                if (!isNaN(tempDate.getTime())) {
+                    parsedDate = tempDate;
+                }
             }
+
+            return {
+                userId: session.user.id,
+                walletId: wallet ? wallet.id : null,
+                date: parsedDate,
+                category: t.category || 'Lainnya',
+                amount: amount,
+                type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE',
+                description: t.description || 'Transaksi Import OCR'
+            };
         });
 
-        if (!wallet) {
-            return NextResponse.json({ error: 'Wallet tidak ditemukan atau bukan milik Anda' }, { status: 404 });
-        }
+        // We avoid interactive transactions ($transaction(async)) here because 
+        // they often timeout (P2028) with PgBouncer connection pools.
+        // Instead, we just execute them sequentially.
+        
+        await prisma.transaction.createMany({
+            data: transactionsToCreate
+        });
 
-        // Use interactive transaction to insert all and update wallet balance
-        const result = await prisma.$transaction(async (tx: any) => {
-            let totalIncome = 0;
-            let totalExpense = 0;
-
-            const transactionsToCreate = transactions.map((t: any) => {
-                const amount = parseFloat(t.amount);
-                
-                if (t.type === 'INCOME') totalIncome += amount;
-                else if (t.type === 'EXPENSE') totalExpense += amount;
-
-                // Safely parse date or fallback to today
-                let parsedDate = new Date();
-                if (t.date) {
-                    const tempDate = new Date(t.date);
-                    if (!isNaN(tempDate.getTime())) {
-                        parsedDate = tempDate;
-                    }
-                }
-
-                return {
-                    userId: session.user.id,
-                    walletId: wallet.id,
-                    date: parsedDate,
-                    category: t.category || 'Lainnya',
-                    amount: amount,
-                    type: t.type === 'INCOME' ? 'INCOME' : 'EXPENSE',
-                    description: t.description || 'Transaksi Import OCR'
-                };
-            });
-
-            // Bulk create transactions
-            await tx.transaction.createMany({
-                data: transactionsToCreate
-            });
-
-            // Calculate new balance
+        let newBalance = null;
+        if (wallet) {
             const balanceChange = totalIncome - totalExpense;
-            
-            const updatedWallet = await tx.wallet.update({
+            const updatedWallet = await prisma.wallet.update({
                 where: { id: wallet.id },
                 data: {
                     balance: {
@@ -80,12 +80,13 @@ export async function POST(request: Request) {
                     }
                 }
             });
+            newBalance = updatedWallet.balance;
+        }
 
-            return {
-                importedCount: transactionsToCreate.length,
-                newBalance: updatedWallet.balance
-            };
-        });
+        const result = {
+            importedCount: transactionsToCreate.length,
+            newBalance: newBalance
+        };
 
         return NextResponse.json({ 
             message: 'Import berhasil', 

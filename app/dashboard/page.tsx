@@ -57,42 +57,44 @@ export default async function DashboardPage() {
     const isViewer = session.user.role === 'VIEWER';
     const userId = session.user.id;
 
-    // ✅ Run ALL database queries in parallel — 4x faster than sequential
-    const [transactionsRaw, prevTransactions, allTransactions, topGoalsRaw, walletsAggregate] = await Promise.all([
-        // Query 1: Current month transactions (latest 10)
-        prisma.transaction.findMany({
-            where: {
-                date: { gte: startDate, lte: endDate },
-                ...(!isViewer && { userId }),
-            },
-            orderBy: { date: 'desc' },
-            take: 10,
-        }),
-        // Query 2: Previous month transactions (for comparison)
-        prisma.transaction.findMany({
-            where: {
-                date: { gte: prevStartDate, lte: prevEndDate },
-                ...(!isViewer && { userId }),
-            },
-        }),
-        // Query 3: All-time transactions (for total balance)
-        prisma.transaction.findMany({
-            where: isViewer ? {} : { userId },
-        }),
-        // Query 4: Top active goals
-        (prisma as any).goal.findMany({
-            where: isViewer
-                ? { status: 'ACTIVE' }
-                : { userId, status: 'ACTIVE' },
-            orderBy: { targetAmount: 'desc' },
-            take: 3,
-        }),
-        // Query 5: Wallet Balances to subtract
-        prisma.wallet.aggregate({
-            where: isViewer ? {} : { userId },
-            _sum: { balance: true }
-        })
-    ]);
+    // Execute queries sequentially to prevent Supabase connection pool exhaustion (PgBouncer/Supavisor limits)
+    // Query 1: Current month transactions (latest 10)
+    const transactionsRaw = await prisma.transaction.findMany({
+        where: {
+            date: { gte: startDate, lte: endDate },
+            ...(!isViewer && { userId }),
+        },
+        orderBy: { date: 'desc' },
+        take: 10,
+    });
+
+    // Query 2: Previous month transactions (for comparison)
+    const prevTransactions = await prisma.transaction.findMany({
+        where: {
+            date: { gte: prevStartDate, lte: prevEndDate },
+            ...(!isViewer && { userId }),
+        },
+    });
+
+    // Query 3: All-time transactions (for total balance)
+    const allTransactions = await prisma.transaction.findMany({
+        where: isViewer ? {} : { userId },
+    });
+
+    // Query 4: Top active goals
+    const topGoalsRaw = await (prisma as any).goal.findMany({
+        where: isViewer
+            ? { status: 'ACTIVE' }
+            : { userId, status: 'ACTIVE' },
+        orderBy: { targetAmount: 'desc' },
+        take: 3,
+    });
+
+    // Query 5: Wallet Balances to subtract
+    const walletsAggregate = await prisma.wallet.aggregate({
+        where: isViewer ? {} : { userId },
+        _sum: { balance: true }
+    });
 
     // Serialize transactions (convert Date & Decimal to plain JS types)
     const transactions = transactionsRaw.map((t: any) => ({

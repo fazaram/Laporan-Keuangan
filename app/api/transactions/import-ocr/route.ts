@@ -36,27 +36,47 @@ export async function POST(request: Request) {
 
         const groq = new Groq({ apiKey });
 
-        const prompt = `Anda adalah AI financial parser.
-Tugas Anda adalah mengubah data OCR menjadi transaksi keuangan.
+        let exchangeRatesData: any = null;
+        try {
+            const ratesRes = await fetch('https://open.er-api.com/v6/latest/IDR', { next: { revalidate: 3600 } });
+            if (ratesRes.ok) {
+                exchangeRatesData = await ratesRes.json();
+            }
+        } catch (e) {
+            console.error("Gagal mengambil kurs:", e);
+        }
 
-Rules:
-* Tentukan apakah transaksi merupakan INCOME atau EXPENSE.
-* Jika nominal masuk ke rekening maka INCOME.
-* Jika pembayaran, transfer keluar, QRIS, pembelian atau debit maka EXPENSE.
-* Jika tidak yakin gunakan EXPENSE.
-* Tentukan kategori yang paling relevan.
-* Jangan membuat transaksi yang tidak ada pada data.
-* Output JSON ONLY berupa ARRAY of objects.
-* Tidak boleh ada penjelasan tambahan.
+        const prompt = `Anda adalah AI parser keuangan tingkat lanjut.
+Tugas Anda adalah mengubah gambar struk belanja atau dokumen mutasi rekening menjadi data transaksi terstruktur.
 
-Format:
+ATURAN UTAMA:
+1. Posisikan diri Anda sebagai pembeli atau pemilik rekening (nasabah), BUKAN sebagai kasir atau toko.
+2. Tentukan TIPE transaksi:
+   - STRUK BELANJA (dari toko, restoran, minimarket) SELALU "EXPENSE".
+   - MUTASI REKENING: Istilah Debit (DB) atau uang keluar adalah "EXPENSE". Istilah Credit (CR) atau uang masuk adalah "INCOME".
+   - Jika tidak yakin, default ke "EXPENSE".
+3. MATA UANG & FORMAT ANGKA:
+   - JANGAN PERNAH MELAKUKAN KONVERSI KURS / MATEMATIKA! Ambil nominal murni persis seperti yang tertera di struk. Jika tertera 150,500.00, maka outputkan 150500. Abaikan simbol mata uang dalam angka.
+   - Ekstrak kode mata uang (contoh: IDR, USD, JPY, EUR, SGD) dan masukkan ke field \`currency\`. Jika tidak ada keterangan mata uang, default ke "IDR".
+   - Nilai \`amount\` HARUS berupa ANGKA MURNI tanpa simbol dan tanpa titik/koma ribuan (contoh benar: 150500).
+4. PENGGABUNGAN ITEM (PENTING):
+   - Untuk STRUK BELANJA: JANGAN memasukkan setiap item barang menjadi transaksi terpisah! Gabungkan seluruh belanjaan menjadi SATU transaksi saja menggunakan nominal "Total" (termasuk pajak). Deskripsinya gunakan nama toko/tempat (misal: "Belanja di Indomaret" atau "Makan di KFC").
+   - Untuk MUTASI REKENING: Pisahkan setiap baris mutasi menjadi transaksi terpisah sesuai tanggalnya.
+5. KATEGORI: Tentukan kategori yang masuk akal (Makan, Belanja, Transportasi, Tagihan, Transfer, Gaji, dll).
+6. TANGGAL: Gunakan format YYYY-MM-DD. Jika tahun tidak tertera, gunakan tahun saat ini.
+
+FORMAT OUTPUT:
+Keluarkan output STRICT JSON berupa ARRAY OF OBJECTS tanpa teks pengantar atau penutup apapun.
+
+CONTOH OUTPUT JSON:
 [
   {
-    "date": "YYYY-MM-DD",
-    "description": "string",
-    "amount": number,
-    "type": "INCOME" | "EXPENSE",
-    "category": "string"
+    "date": "2023-10-25",
+    "description": "Belanja di Superindo",
+    "amount": 250500,
+    "currency": "IDR",
+    "type": "EXPENSE",
+    "category": "Belanja"
   }
 ]
 `;
@@ -79,9 +99,8 @@ Format:
                     messages: [
                         { role: "user", content: `${prompt}\n\nData Teks:\n${truncatedText}` },
                     ],
-                    model: "llama3-70b-8192", // Fast text model
+                    model: "llama-3.3-70b-versatile", // Fast text model
                     temperature: 0,
-                    response_format: { type: "json_object" },
                 });
             } catch (err) {
                 console.error("PDF Parse Error:", err);
@@ -117,14 +136,24 @@ Format:
 
         let responseText = chatCompletion.choices[0]?.message?.content || "[]";
         
-        // Strip markdown backticks if any
-        if (responseText.includes('```')) {
-            responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        let jsonString = responseText;
+        const firstBracket = responseText.indexOf('[');
+        const lastBracket = responseText.lastIndexOf(']');
+        
+        if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+            jsonString = responseText.substring(firstBracket, lastBracket + 1);
+        } else {
+            // fallback: maybe it returned an object {} instead of array []
+            const firstBrace = responseText.indexOf('{');
+            const lastBrace = responseText.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                jsonString = responseText.substring(firstBrace, lastBrace + 1);
+            }
         }
-
+        
         let parsedData: any;
         try {
-            parsedData = JSON.parse(responseText);
+            parsedData = JSON.parse(jsonString);
             // In JSON mode, Llama might wrap the array in an object like { "transactions": [...] }
             // So we need to normalize it to an array
             if (!Array.isArray(parsedData)) {
@@ -139,6 +168,26 @@ Format:
 
         if (!parsedData || parsedData.length === 0) {
             return NextResponse.json({ error: 'Tidak ada transaksi yang berhasil dikenali.' }, { status: 400 });
+        }
+
+        // Perform backend currency conversion
+        if (exchangeRatesData && exchangeRatesData.rates) {
+            for (let t of parsedData) {
+                if (t.currency && t.currency.toUpperCase() !== 'IDR') {
+                    const currencyCode = t.currency.toUpperCase();
+                    const rateToUSD = exchangeRatesData.rates[currencyCode];
+                    const idrToUSD = exchangeRatesData.rates['IDR']; // Technically 1 since base is IDR in this API
+                    
+                    if (rateToUSD) {
+                        // Math: (Amount / currencyRate) * IDR rate
+                        // Since base is IDR, rate is actually '1 IDR = X Currency'
+                        // Wait, ER-API with /latest/IDR means base is IDR.
+                        // So exchangeRatesData.rates.USD = 0.0000625. To get IDR from USD: 1 / 0.0000625 = 16000.
+                        const rateToIDR = 1 / rateToUSD;
+                        t.amount = Math.round(t.amount * rateToIDR);
+                    }
+                }
+            }
         }
 
         return NextResponse.json({ transactions: parsedData });

@@ -53,8 +53,8 @@ export const authOptions: AuthOptions = {
     ],
     session: {
         strategy: 'jwt',
-        maxAge: 30 * 24 * 60 * 60, // 30 days session
-        updateAge: 24 * 60 * 60,   // Extend session cookie expiry daily
+        maxAge: 60 * 60,       // 60 menit (Sesi kedaluwarsa jika idle selama 1 jam)
+        updateAge: 10 * 60,    // Perpanjang sesi setiap 10 menit jika ada aktivitas
     },
     pages: {
         signIn: '/login',

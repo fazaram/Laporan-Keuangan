@@ -43,7 +43,23 @@ export default function ImportOCRPage() {
                 const res = await fetch('/api/wallets');
                 if (res.ok) {
                     const data = await res.json();
-                    setWallets(data.wallets || []);
+                    const fetchedWallets = data.wallets || [];
+                    setWallets(fetchedWallets);
+                    
+                    if (fetchedWallets.length > 0) {
+                        // Coba cari dompet yang namanya mengandung "main" atau "utama"
+                        const mainWallet = fetchedWallets.find((w: Wallet) => 
+                            w.name.toLowerCase().includes('main') || 
+                            w.name.toLowerCase().includes('utama')
+                        );
+                        
+                        if (mainWallet) {
+                            setSelectedWalletId(mainWallet.id);
+                        } else {
+                            // Jika tidak ada, pilih dompet pertama secara otomatis
+                            setSelectedWalletId(fetchedWallets[0].id);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch wallets:', err);
@@ -115,10 +131,7 @@ export default function ImportOCRPage() {
             return;
         }
 
-        if (!selectedWalletId) {
-            showToast('Pilih dompet (wallet) tujuan terlebih dahulu', 'error');
-            return;
-        }
+        // Wallet validation removed, transactions can now be global (Total Amount)
 
         setImporting(true);
         try {
@@ -127,7 +140,7 @@ export default function ImportOCRPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     transactions: selectedTxs,
-                    walletId: selectedWalletId
+                    walletId: null // Force global transaction for Total Amount integration
                 }),
             });
 
@@ -205,23 +218,35 @@ export default function ImportOCRPage() {
                         </div>
 
                         {file && (
-                            <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                <div className="flex items-center gap-3">
-                                    <FileText className="text-blue-500" />
-                                    <div className="text-left">
-                                        <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px] sm:max-w-xs">{file.name}</p>
-                                        <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <div className="mt-6 flex flex-col p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                {file.type.startsWith('image/') && (
+                                    <div className="mb-4 relative w-full h-48 sm:h-64 rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img 
+                                            src={URL.createObjectURL(file)} 
+                                            alt="Preview" 
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
+                                )}
+                                <div className="flex items-center justify-between w-full">
+                                    <div className="flex items-center gap-3">
+                                        <FileText className="text-blue-500" />
+                                        <div className="text-left">
+                                            <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px] sm:max-w-xs">{file.name}</p>
+                                            <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setFile(null);
+                                        }}
+                                        className="p-2 text-gray-400 hover:text-red-500 transition-colors bg-white border border-gray-200 rounded-lg shadow-sm"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setFile(null);
-                                    }}
-                                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
                             </div>
                         )}
 
@@ -278,20 +303,11 @@ export default function ImportOCRPage() {
                                 <h2 className="text-xl font-bold text-gray-900">Preview Transaksi</h2>
                                 <div className="flex items-center gap-4 w-full sm:w-auto">
                                     <div className="flex-1 sm:flex-none">
-                                        <select
-                                            value={selectedWalletId}
-                                            onChange={(e) => setSelectedWalletId(e.target.value)}
-                                            className="w-full sm:w-64 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                        >
-                                            <option value="" disabled>Pilih Wallet Tujuan...</option>
-                                            {wallets.map(w => (
-                                                <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>
-                                            ))}
-                                        </select>
+                                        {/* Wallet selection hidden by user request; auto-selected in background */}
                                     </div>
                                     <button
                                         onClick={handleImport}
-                                        disabled={importing || selectedTxs.length === 0 || !selectedWalletId}
+                                        disabled={importing || selectedTxs.length === 0}
                                         className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
                                     >
                                         {importing ? <Loader2 className="animate-spin" size={18} /> : 'Import Data'}

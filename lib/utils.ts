@@ -2,12 +2,13 @@ export const MAX_ALLOWED_AMOUNT = 100_000_000_000_000; // 100 Trillion IDR
 
 export function formatCurrency(amount: number | string): string {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('id-ID', {
+    const formatted = new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
     }).format(num);
+    return formatted.replace(/^Rp\s?/, 'Rp.');
 }
 
 export function formatDate(date: Date | string): string {

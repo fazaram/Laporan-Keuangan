@@ -59,8 +59,11 @@ ATURAN UTAMA:
    - JANGAN PERNAH MELAKUKAN KONVERSI KURS / MATEMATIKA! Ambil nominal murni persis seperti yang tertera di struk. Jika tertera 150,500.00, maka outputkan 150500. Abaikan simbol mata uang dalam angka.
    - Ekstrak kode mata uang (contoh: IDR, USD, JPY, EUR, SGD) dan masukkan ke field \`currency\`. Jika tidak ada keterangan mata uang, default ke "IDR".
    - Nilai \`amount\` HARUS berupa ANGKA MURNI tanpa simbol dan tanpa titik/koma ribuan (contoh benar: 150500).
-4. PENGGABUNGAN ITEM (PENTING):
-   - Untuk STRUK BELANJA: JANGAN memasukkan setiap item barang menjadi transaksi terpisah! Gabungkan seluruh belanjaan menjadi SATU transaksi saja menggunakan nominal "Total" (termasuk pajak). Deskripsinya gunakan nama toko/tempat (misal: "Belanja di Indomaret" atau "Makan di KFC").
+4. RINCIAN ITEM (PENTING):
+   - JANGAN hanya mengambil nominal "Total"! Ekstrak setiap item barang / rincian layanan dalam struk atau invoice menjadi transaksi yang TERPISAH (itemized).
+   - Gunakan nama toko/pengirim beserta nama item sebagai \`description\` (contoh: "ABC Seller - Digital Good", "Indomaret - Susu Ultra").
+   - Masukkan biaya tambahan seperti Pajak (Tax/PPN/VAT/GST), Ongkir, atau Service Charge sebagai transaksi terpisah (contoh: "ABC Seller - Tax 10%").
+   - JANGAN masukkan baris rekapitulasi/agregat seperti "Subtotal", "Total", "Grand Total", "Amount Due", "Balance", "Kembalian", "Cash", atau istilah sejenisnya dalam bahasa asing (seperti JPY/Mandarin/Inggris) sebagai transaksi! Baris-baris ini hanya boleh dijadikan acuan, namun tidak boleh diekstrak agar tidak terjadi perhitungan ganda (double counting).
    - Untuk MUTASI REKENING: Pisahkan setiap baris mutasi menjadi transaksi terpisah sesuai tanggalnya.
 5. KATEGORI: Tentukan kategori yang masuk akal (Makan, Belanja, Transportasi, Tagihan, Transfer, Gaji, dll).
 6. TANGGAL: Gunakan format YYYY-MM-DD. Jika tahun tidak tertera, gunakan tahun saat ini.
@@ -184,6 +187,11 @@ CONTOH OUTPUT JSON:
                         // Wait, ER-API with /latest/IDR means base is IDR.
                         // So exchangeRatesData.rates.USD = 0.0000625. To get IDR from USD: 1 / 0.0000625 = 16000.
                         const rateToIDR = 1 / rateToUSD;
+                        
+                        // Save original data before conversion
+                        t.originalAmount = t.amount;
+                        t.originalCurrency = currencyCode;
+                        
                         t.amount = Math.round(t.amount * rateToIDR);
                     }
                 }

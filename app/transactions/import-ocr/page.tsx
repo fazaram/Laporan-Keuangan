@@ -15,6 +15,8 @@ interface ParsedTransaction {
     category: string;
     type: 'INCOME' | 'EXPENSE';
     amount: number;
+    originalAmount?: number;
+    originalCurrency?: string;
     selected: boolean;
 }
 
@@ -331,7 +333,10 @@ export default function ImportOCRPage() {
                                             <th className="p-4">Deskripsi</th>
                                             <th className="p-4 w-48">Kategori</th>
                                             <th className="p-4 w-40">Tipe</th>
-                                            <th className="p-4 w-48 text-right">Nominal</th>
+                                            {transactions.some(t => t.originalCurrency && t.originalCurrency !== 'IDR') && (
+                                                <th className="p-4 w-40 text-right">Nominal Asli</th>
+                                            )}
+                                            <th className="p-4 w-48 text-right">Nominal (IDR)</th>
                                             <th className="p-4 w-16 text-center">Aksi</th>
                                         </tr>
                                     </thead>
@@ -380,13 +385,30 @@ export default function ImportOCRPage() {
                                                         <option value="EXPENSE">Pengeluaran</option>
                                                     </select>
                                                 </td>
+                                                {transactions.some(t => t.originalCurrency && t.originalCurrency !== 'IDR') && (
+                                                    <td className="p-4 text-right">
+                                                        {tx.originalCurrency && tx.originalCurrency !== 'IDR' ? (
+                                                            <div className="text-sm font-medium text-gray-700 bg-gray-100 py-1.5 px-3 rounded-lg inline-block">
+                                                                {tx.originalCurrency} {new Intl.NumberFormat('id-ID').format(tx.originalAmount || 0)}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-gray-400 text-sm">-</span>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <td className="p-4 text-right">
-                                                    <input 
-                                                        type="number" 
-                                                        value={tx.amount} 
-                                                        onChange={(e) => updateTransaction(tx.id, 'amount', parseFloat(e.target.value) || 0)}
-                                                        className="w-full p-2 text-sm border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 outline-none text-right"
-                                                    />
+                                                    <div className="relative flex items-center">
+                                                        <span className="absolute left-3 text-gray-500 font-semibold text-sm">Rp.</span>
+                                                        <input 
+                                                            type="text" 
+                                                            value={tx.amount === 0 ? '' : new Intl.NumberFormat('id-ID').format(tx.amount)} 
+                                                            onChange={(e) => {
+                                                                const rawValue = e.target.value.replace(/[^0-9]/g, '');
+                                                                updateTransaction(tx.id, 'amount', parseInt(rawValue, 10) || 0);
+                                                            }}
+                                                            className="w-full pl-10 p-2 text-sm border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 outline-none text-right font-bold text-gray-900"
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td className="p-4 text-center">
                                                     <button 
